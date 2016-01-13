@@ -1,0 +1,39 @@
+0
+Access  bit: 0x0004
+Set 	bit: BIT |= 0x01;
+Clear 	bit: BIT &= ~0x01;
+
+1
+Access  bit: 0x0008
+Set 	bit: BIT |= 0x02;
+Clear 	bit: BIT &= ~0x02;
+
+2
+Access  bit: 0x0010
+Set 	bit: BIT |= 0x04;
+Clear 	bit: BIT &= ~0x04;
+
+3
+Access  bit: 0x0020
+Set 	bit: BIT |= 0x08;
+Clear 	bit: BIT &= ~0x08;
+
+4
+Access  bit: 0x0040
+Set 	bit: BIT |= 0x10;
+Clear 	bit: BIT &= ~0x10;
+
+5
+Access  bit: 0x0080
+Set 	bit: BIT |= 0x20;
+Clear 	bit: BIT &= ~0x20;
+
+6
+Access  bit: 0x0100
+Set 	bit: BIT |= 0x40;
+Clear 	bit: BIT &= ~0x40;
+
+7
+Access  bit: 0x0200
+Set 	bit: BIT |= 0x80;
+Clear 	bit: BIT &= ~0x80;
