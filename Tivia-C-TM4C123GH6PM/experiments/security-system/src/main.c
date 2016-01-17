@@ -18,7 +18,7 @@
 // GPIO Digital Enable (GPIODEN) (spec, p. 682).
 #define GPIO_PORTE_DEN_R        (*((volatile uint32_t *)0x4002451C))
 
-// The GPIODATA register is the data register (spec, p. 662)
+// The GPIODATA register is the data register (spec, p. 662).
 #define GPIO_PORTE_DATA_R       (*((volatile uint32_t *)0x400243FC))
 
 // 0x4002 4000 + 0x0040
@@ -27,6 +27,15 @@
 #define PORTE_PIN2_DATA         (*((volatile uint32_t *)0x40024010))
 #define PORTE_PIN1_DATA         (*((volatile uint32_t *)0x40024008))
 #define PORTE_PIN0_DATA         (*((volatile uint32_t *)0x40024004))
+
+// SysTick Control and Status Register (base is 0xE000E00 + offset 0x10).
+#define NVIC_STCTRL_R      (*((volatile uint32_t *)0xE000E010))
+
+// SysTick Reload Value Register (base is 0xE000E000 + 0x14)
+#define NVIC_STRELOAD_R    (*((volatile uint32_t *)0xE000E014))
+
+// SysTick Current Value Register (base is 0xE000E000 + 0x18).
+#define NVIC_STCURRENT_R   (*((volatile uint32_t *)0xE000E018))
 
 void initPortE(void) {
   /**
@@ -71,6 +80,20 @@ void initPortE(void) {
   GPIO_PORTE_DEN_R |= 0x1F;
 }
 
+void initSysTick(void) {
+  // Let's disable SysTick.
+  NVIC_STCTRL_R = 0;
+
+  // Let's reset current.
+  NVIC_STCURRENT_R = 0;
+
+  // Let's set RELOAD to big number.
+  NVIC_STRELOAD_R = 0x00FFFFFFFF;
+
+  // Enable SysTick.
+  NVIC_STCTRL_R = 0x05;
+}
+
 unsigned char isAlarmSystemOn = 0;
 unsigned char isAlarmSystemBusy = 0;
 
@@ -90,28 +113,33 @@ char checkMainSwitch() {
   return isAlarmSystemOn;
 }
 
-void delay(unsigned long halfsecs) {
-  unsigned long count;
-
-  while(halfsecs > 0) {
-    count = 100000;
-    while (count > 0) {
-      count--;
-    }
-    halfsecs--;
-  }
-}
-
-void checkAlarmState() {
+void checkAlarmState(void) {
   if (PORTE_PIN0_DATA == 0x01 || PORTE_PIN1_DATA == 0x02) {
     PORTE_PIN4_DATA ^= 0x10;
-    delay(5);
+    sysTickWaitMs(5000);
   } else {
     PORTE_PIN4_DATA = 0x00;
   }
 }
 
+void sysTickWait(unsigned long delay){
+  volatile unsigned long elapsedTime;
+  unsigned long startTime = NVIC_STCURRENT_R;
+  do {
+    elapsedTime = (startTime - NVIC_STCURRENT_R) & 0x00FFFFFF;
+  }
+  while(elapsedTime <= delay);
+}
+
+void sysTickWaitMs(unsigned long delayMs){
+  unsigned long i;
+  for(i = 0; i < delayMs; i++){
+    sysTickWait(16000);
+  }
+}
+
 int main(void) {
+  initSysTick();
   initPortE();
 
   while(1) {
