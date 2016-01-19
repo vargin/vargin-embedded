@@ -14,7 +14,7 @@
 <indep _net0.V 1>
   +1.87070225978e+00
 </indep>
-<indep _net1.V 1>
+<indep _net3.V 1>
   +3.00000000000e+00
 </indep>
 <indep _net2.V 1>
@@ -23,6 +23,6 @@
 <indep _net4.V 1>
   +1.50000000000e+00
 </indep>
-<indep _net3.V 1>
+<indep _net1.V 1>
   +1.87070225978e+00
 </indep>
