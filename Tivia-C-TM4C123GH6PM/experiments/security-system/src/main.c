@@ -116,7 +116,7 @@ char checkMainSwitch() {
 void checkAlarmState(void) {
   if (PORTE_PIN0_DATA == 0x01 || PORTE_PIN1_DATA == 0x02) {
     PORTE_PIN4_DATA ^= 0x10;
-    sysTickWaitMs(5000);
+    sysTickWaitMs(500);
   } else {
     PORTE_PIN4_DATA = 0x00;
   }
