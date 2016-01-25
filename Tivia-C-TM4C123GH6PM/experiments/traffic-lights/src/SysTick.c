@@ -36,8 +36,7 @@ void
 Tick(void)
 {
   // Decrement to zero the counter used by the delay routine.
-  if (timerTicks != 0u)
-      {
+  if (timerTicks != 0u) {
     --timerTicks;
   }
 }
