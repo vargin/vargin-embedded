@@ -17,6 +17,15 @@
 #define PORT_GPIOAMSEL_OFFSET   (0x528UL)
 #define PORT_GPIOPCTL_OFFSET    (0x52CUL)
 
+#define PORT_PIN_0              (0x01UL)
+#define PORT_PIN_1              (0x02UL)
+#define PORT_PIN_2              (0x04UL)
+#define PORT_PIN_3              (0x08UL)
+#define PORT_PIN_4              (0x10UL)
+#define PORT_PIN_5              (0x20UL)
+#define PORT_PIN_6              (0x40UL)
+#define PORT_PIN_7              (0x80UL)
+
 typedef struct
 {
   volatile uint32_t* AMSEL;
