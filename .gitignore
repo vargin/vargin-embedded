@@ -1,3 +1,5 @@
+.idea
+CMakeLists.txt
 .settings
 .launches
 .metadata

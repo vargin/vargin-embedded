@@ -1,5 +1,5 @@
-#include "CortexM4.h"
-#include "PLL.h"
+#include "../include/cortexm4.h"
+#include "../include/pll.h"
 
 #define RCC   (*((volatile uint32_t *)System_CTRL_RCC))
 #define RCC2  (*((volatile uint32_t *)System_CTRL_RCC2))
@@ -34,7 +34,7 @@ PLLInitialize(uint8_t divider)
   // 7) configure for divider based clock
   RCC2 |= (divider << 22);
 
-  // 8) wait for the PLL to lock by polling PLLLRIS
+  // 8) wait for the PLL to lock by polling PLLRIS
   // wait for PLLRIS bit
   while((RIS & 0x00000040) == 0) {};
 

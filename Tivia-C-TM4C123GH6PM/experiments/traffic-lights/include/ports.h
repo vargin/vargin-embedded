@@ -1,11 +1,11 @@
 #include <stdint.h>
 
-#define PORTA_BASE          (0x40004000UL)
-#define PORTB_BASE          (0x40005000UL)
-#define PORTC_BASE          (0x40006000UL)
-#define PORTD_BASE          (0x40007000UL)
-#define PORTE_BASE          (0x40024000UL)
-#define PORTF_BASE          (0x40025000UL)
+#define PORT_A_BASE          (0x40004000UL)
+#define PORT_B_BASE          (0x40005000UL)
+#define PORT_C_BASE          (0x40006000UL)
+#define PORT_D_BASE          (0x40007000UL)
+#define PORT_E_BASE          (0x40024000UL)
+#define PORT_F_BASE          (0x40025000UL)
 
 #define PORT_GPIODATA_OFFSET    (0x000UL)
 #define PORT_GPIODIR_OFFSET     (0x400UL)
@@ -35,9 +35,9 @@ typedef struct
   volatile uint32_t* DEN;
   volatile uint32_t* DATA;
   volatile uint32_t *PINS[8];
-} GPIOPortAdresses;
+} GPIOPortRegisters;
 
 typedef enum {PortA, PortB, PortC, PortD, PortE} PortTypes;
 
-GPIOPortAdresses
+GPIOPortRegisters
 GetPort(PortTypes portType);

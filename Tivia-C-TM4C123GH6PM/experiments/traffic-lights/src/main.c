@@ -1,7 +1,7 @@
-#include <PLL.h>
-#include <sys/_stdint.h>
-#include <SysTick.h>
-#include "ports.h"
+#include <stdint.h>
+#include "../include/pll.h"
+#include "../include/systick.h"
+#include "../include/ports.h"
 
 // General-Purpose Input/Output Run Mode Clock Gating Control (spec, p. 340).
 #define SYSCTL_RCGCGPIO_R       (*((volatile uint32_t *)0x400FE608))
@@ -33,7 +33,7 @@ TrafficLightState States[4] = {
 };
 
 void
-initPortE(GPIOPortAdresses port)
+initPortE(GPIOPortRegisters port)
 {
   /**
    * Enable the Port’s Clock in RCGCGPIO. You are required to enable the clock
@@ -79,25 +79,27 @@ unsigned char isAlarmSystemOn = 0;
 unsigned char isAlarmSystemBusy = 0;
 
 char
-checkMainSwitch(GPIOPortAdresses port)
+checkMainSwitch(GPIOPortRegisters port)
 {
-  unsigned char powerIsPressed = (*port.PINS[2]) == PORT_PIN_2;
+  unsigned char powerIsPressed = (unsigned char) (
+    (*port.PINS[2]) == PORT_PIN_2
+  );
 
   if (powerIsPressed && !isAlarmSystemBusy) {
     isAlarmSystemBusy = 1;
   } else if (!powerIsPressed && isAlarmSystemBusy) {
-    isAlarmSystemOn = !isAlarmSystemOn;
+    isAlarmSystemOn = (unsigned char) !isAlarmSystemOn;
     isAlarmSystemBusy = 0;
   }
 
   // Enable power on LED.
-  (*port.PINS[3]) = isAlarmSystemOn ? PORT_PIN_3 : 0x00;
+  (*port.PINS[3]) = (uint32_t) (isAlarmSystemOn ? PORT_PIN_3 : 0x00);
 
   return isAlarmSystemOn;
 }
 
 void
-checkAlarmState(GPIOPortAdresses port)
+checkAlarmState(GPIOPortRegisters port)
 {
   if ((*port.PINS[0]) == PORT_PIN_0 || (*port.PINS[1]) == PORT_PIN_1) {
     (*port.PINS[4]) ^= 0x10;
@@ -110,7 +112,7 @@ checkAlarmState(GPIOPortAdresses port)
 int
 main(void)
 {
-  GPIOPortAdresses portE = GetPort(PortE);
+  GPIOPortRegisters portE = GetPort(PortE);
 
   PLLInitialize(4);
 

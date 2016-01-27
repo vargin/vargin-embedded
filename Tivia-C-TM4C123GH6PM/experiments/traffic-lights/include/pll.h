@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "CortexM4.h"
+#include "cortexm4.h"
 
 /**
  * Structure type to access the System Timer (SysTick).

@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "CortexM4.h"
+#include "cortexm4.h"
 
 /**
  * Structure type to access the System Timer (SysTick).
@@ -26,9 +26,6 @@ extern volatile uint32_t timerTicks;
 
 extern void
 SysTickInitialize(uint32_t ticks);
-
-extern void
-SysTickInitializeWithPLL(uint32_t ticks);
 
 extern void
 SysTickDelay(uint32_t ticks);

@@ -1,5 +1,6 @@
-#include "CortexM4.h"
-#include "SysTick.h"
+#include <stdint.h>
+#include "../include/cortexm4.h"
+#include "../include/systick.h"
 
 void
 Tick(void);
@@ -18,8 +19,9 @@ SysTickInitialize(uint32_t ticks)
   SysTick->RELOAD = TivaSystemCoreClock / ticks;
   SysTick->CURRENT = 0UL;
 
-  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_MASK | SysTick_CTRL_TICKINT_MASK |
-  SysTick_CTRL_ENABLE_MASK;
+  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_MASK |
+    SysTick_CTRL_TICKINT_MASK |
+    SysTick_CTRL_ENABLE_MASK;
 }
 
 void
