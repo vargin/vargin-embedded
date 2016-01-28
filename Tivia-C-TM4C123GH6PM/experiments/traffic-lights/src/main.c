@@ -6,6 +6,9 @@
 // General-Purpose Input/Output Run Mode Clock Gating Control (spec, p. 340).
 #define SYSCTL_RCGCGPIO_R       (*((volatile uint32_t *)0x400FE608))
 
+GPIOPortRegisters portB;
+GPIOPortRegisters portE;
+
 typedef struct
 {
   /**
@@ -33,100 +36,72 @@ TrafficLightState States[4] = {
 };
 
 void
-initPortE(GPIOPortRegisters port)
+initPorts(void)
 {
+  portB = GetPort(PortB);
+  portE = GetPort(PortE);
+
   /**
    * Enable the Port’s Clock in RCGCGPIO. You are required to enable the clock
    * prior to accessing any of the peripherals registers.  If you don’t enable
    * the peripheral’s clock, your application will end up in the fault handler.
-   * Here we enabled clock only for Port F and E (5th and 4th bits):
-   * OR ----0011.0000.
+   * Here we enabled clock only for Port B and E (1st and 4th bits):
+   * OR ----0001.0010.
    * Specification, page 340.
    */
-  SYSCTL_RCGCGPIO_R |= 0x00000030;
+  SYSCTL_RCGCGPIO_R |= 0x00000012;
 
-  /**
-   * Disable analog on all pins of port E.
-   */
-  (*port.AMSEL) = 0x0UL;
+  uint32_t inputPins = PORT_PIN_0 | PORT_PIN_1;
+  uint32_t outputPins = PORT_PIN_0 |
+                        PORT_PIN_1 |
+                        PORT_PIN_2 |
+                        PORT_PIN_3 |
+                        PORT_PIN_4 |
+                        PORT_PIN_5;
 
-  /**
-   * Disable analog on all pins of port E.
-   */
-  (*port.PCTL) = 0x0UL;
+   // Disable analog on all pins.
+  (*portE.AMSEL) &= ~inputPins;
+  (*portB.AMSEL) &= ~outputPins;
 
-  /**
-   * Clear the bits in the Alternate Function Select register (AFSEL).
-   * Pins on the TM4C123 can be configured as GPIO pins or as an alternate
-   * function (e.g. serial interface). We want them to be GPIO pins, so make
-   * sure to clear this register. All pins are GPIO.
-   */
-  (*port.AFSEL) = 0x0UL;
+  (*portE.PCTL) &= ~inputPins;
+  (*portB.PCTL) &= ~outputPins;
 
-  /**
-   * Configure each pin as an input or output in the DIR register.
-   */
-  (*port.DIR) |= PORT_PIN_3 | PORT_PIN_4;
-  (*port.DIR) &= ~(PORT_PIN_0 | PORT_PIN_1 | PORT_PIN_2);
+  // Clear the bits in the Alternate Function Select register (AFSEL).
+  (*portE.AFSEL) &= ~inputPins;
+  (*portB.AFSEL) &= ~outputPins;
 
-  /*
-   * Enable digital I/O on PE4-0, 0x1F is 0001 1111.
-   */
-  (*port.DEN) |= PORT_PIN_0 | PORT_PIN_1 | PORT_PIN_2 | PORT_PIN_3 | PORT_PIN_4;
-}
+  // Configure each pin as an input or output in the DIR register.
+  (*portE.DIR) &= ~inputPins;
+  (*portB.DIR) |= outputPins;
 
-unsigned char isAlarmSystemOn = 0;
-unsigned char isAlarmSystemBusy = 0;
-
-char
-checkMainSwitch(GPIOPortRegisters port)
-{
-  unsigned char powerIsPressed = (unsigned char) (
-    (*port.PINS[2]) == PORT_PIN_2
-  );
-
-  if (powerIsPressed && !isAlarmSystemBusy) {
-    isAlarmSystemBusy = 1;
-  } else if (!powerIsPressed && isAlarmSystemBusy) {
-    isAlarmSystemOn = (unsigned char) !isAlarmSystemOn;
-    isAlarmSystemBusy = 0;
-  }
-
-  // Enable power on LED.
-  (*port.PINS[3]) = (uint32_t) (isAlarmSystemOn ? PORT_PIN_3 : 0x00);
-
-  return isAlarmSystemOn;
+  // Enable digital I/O on all required pins.
+  (*portE.DEN) |= inputPins;
+  (*portB.DEN) |= outputPins;
 }
 
 void
-checkAlarmState(GPIOPortRegisters port)
+checkAlarmState(void)
 {
-  if ((*port.PINS[0]) == PORT_PIN_0 || (*port.PINS[1]) == PORT_PIN_1) {
-    (*port.PINS[4]) ^= 0x10;
+  if ((*portE.PINS[0]) == PORT_PIN_0 || (*portE.PINS[1]) == PORT_PIN_1) {
+    (*portB.PINS[0]) ^= PORT_PIN_0;
     SysTickDelay(2500);
   } else {
-    (*port.PINS[4]) = 0x00;
+    (*portB.PINS[0]) = 0x00;
   }
 }
 
 int
 main(void)
 {
-  GPIOPortRegisters portE = GetPort(PortE);
+  initPorts();
 
   PLLInitialize(4);
 
   // Use 1ms gradation.
   SysTickInitialize(1000UL);
 
-  initPortE(portE);
-
   while (1) {
-    if (!checkMainSwitch(portE)) {
-      continue;
-    }
-
-    checkAlarmState(portE);
+    checkAlarmState();
   }
 
   return 0;
