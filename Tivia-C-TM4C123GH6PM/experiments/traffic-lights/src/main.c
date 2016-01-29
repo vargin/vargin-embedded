@@ -84,9 +84,19 @@ checkAlarmState(void)
 {
   if ((*portE.PINS[0]) == PORT_PIN_0 || (*portE.PINS[1]) == PORT_PIN_1) {
     (*portB.PINS[0]) ^= PORT_PIN_0;
+    (*portB.PINS[1]) ^= PORT_PIN_1;
+    (*portB.PINS[2]) ^= PORT_PIN_2;
+    (*portB.PINS[3]) ^= PORT_PIN_3;
+    (*portB.PINS[4]) ^= PORT_PIN_4;
+    (*portB.PINS[5]) ^= PORT_PIN_5;
     SysTickDelay(2500);
   } else {
     (*portB.PINS[0]) = 0x00;
+    (*portB.PINS[1]) = 0x00;
+    (*portB.PINS[2]) = 0x00;
+    (*portB.PINS[3]) = 0x00;
+    (*portB.PINS[4]) = 0x00;
+    (*portB.PINS[5]) = 0x00;
   }
 }
 
