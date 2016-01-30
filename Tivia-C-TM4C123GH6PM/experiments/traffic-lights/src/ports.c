@@ -7,7 +7,7 @@ GPIOPortRegisters PORTS[6] = {
     .PCTL = (volatile uint32_t *) (PORT_A_BASE + PORT_GPIOPCTL_OFFSET),
     .DIR = (volatile uint32_t *) (PORT_A_BASE + PORT_GPIODIR_OFFSET),
     .DEN = (volatile uint32_t *) (PORT_A_BASE + PORT_GPIODEN_OFFSET),
-    .DATA = (volatile uint32_t *) (PORT_A_BASE + PORT_GPIODATA_OFFSET),
+    .DATA = (volatile uint32_t *) (PORT_A_BASE + PORT_GPIODATA_OFFSET + 0x3FCUL),
     .PINS = {
       (volatile uint32_t *) (PORT_A_BASE + PORT_GPIODATA_OFFSET + 0x004UL),
       (volatile uint32_t *) (PORT_A_BASE + PORT_GPIODATA_OFFSET + 0x008UL),
@@ -25,7 +25,7 @@ GPIOPortRegisters PORTS[6] = {
     .PCTL = (volatile uint32_t *) (PORT_B_BASE + PORT_GPIOPCTL_OFFSET),
     .DIR = (volatile uint32_t *) (PORT_B_BASE + PORT_GPIODIR_OFFSET),
     .DEN = (volatile uint32_t *) (PORT_B_BASE + PORT_GPIODEN_OFFSET),
-    .DATA = (volatile uint32_t *) (PORT_B_BASE + PORT_GPIODATA_OFFSET),
+    .DATA = (volatile uint32_t *) (PORT_B_BASE + PORT_GPIODATA_OFFSET + 0x3FCUL),
     .PINS = {
       (volatile uint32_t *) (PORT_B_BASE + PORT_GPIODATA_OFFSET + 0x004UL),
       (volatile uint32_t *) (PORT_B_BASE + PORT_GPIODATA_OFFSET + 0x008UL),
@@ -43,7 +43,7 @@ GPIOPortRegisters PORTS[6] = {
     .PCTL = (volatile uint32_t *) (PORT_E_BASE + PORT_GPIOPCTL_OFFSET),
     .DIR = (volatile uint32_t *) (PORT_E_BASE + PORT_GPIODIR_OFFSET),
     .DEN = (volatile uint32_t *) (PORT_E_BASE + PORT_GPIODEN_OFFSET),
-    .DATA = (volatile uint32_t *) (PORT_E_BASE + PORT_GPIODATA_OFFSET),
+    .DATA = (volatile uint32_t *) (PORT_E_BASE + PORT_GPIODATA_OFFSET + 0x3FCUL),
     .PINS = {
       (volatile uint32_t *) (PORT_E_BASE + PORT_GPIODATA_OFFSET + 0x004UL),
       (volatile uint32_t *) (PORT_E_BASE + PORT_GPIODATA_OFFSET + 0x008UL),
