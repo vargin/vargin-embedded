@@ -82,39 +82,13 @@ initPorts(void)
 void
 checkState(void)
 {
-  uint8_t input;
-
-  if ((*portE.PINS[0]) == PORT_PIN_0 && (*portE.PINS[1]) == PORT_PIN_1) {
-    input = 3;
-  } else if ((*portE.PINS[1]) == PORT_PIN_1) {
-    input = 2;
-  } else if ((*portE.PINS[0]) == PORT_PIN_0) {
-    input = 1;
-  } else {
-    input = 0;
-  }
+  uint32_t input = ((*portE.DATA) & (PORT_PIN_0 | PORT_PIN_1));
 
   currentState = states[currentState.Next[input]];
 
   (*portB.DATA) = currentState.Out;
+
   SysTickDelay(currentState.Delay);
-
-  /*if ((*portE.PINS[0]) == PORT_PIN_0 || (*portE.PINS[1]) == PORT_PIN_1) {
-    (*portB.PINS[0]) ^= PORT_PIN_0;
-    (*portB.PINS[1]) ^= PORT_PIN_1;
-    (*portB.PINS[2]) ^= PORT_PIN_2;
-    (*portB.PINS[3]) ^= PORT_PIN_3;
-    (*portB.PINS[4]) ^= PORT_PIN_4;
-    (*portB.PINS[5]) ^= PORT_PIN_5;
-
-  } else {
-    (*portB.PINS[0]) = 0x00;
-    (*portB.PINS[1]) = 0x00;
-    (*portB.PINS[2]) = 0x00;
-    (*portB.PINS[3]) = 0x00;
-    (*portB.PINS[4]) = 0x00;
-    (*portB.PINS[5]) = 0x00;
-  }*/
 }
 
 int
