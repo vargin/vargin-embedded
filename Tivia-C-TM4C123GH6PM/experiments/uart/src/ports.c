@@ -1,6 +1,6 @@
 #include "../include/ports.h"
 
-GPIOPortRegisters PORTS[6] = {
+GPIOPortRegisters GPIO_PORTS[6] = {
   {
     .AMSEL = (volatile uint32_t *) (PORT_A_BASE + PORT_GPIOAMSEL_OFFSET),
     .AFSEL = (volatile uint32_t *) (PORT_A_BASE + PORT_GPIOAFSEL_OFFSET),
@@ -98,16 +98,16 @@ GetPort(PortTypes portType)
 {
   switch (portType) {
     case PortA:
-      return PORTS[0];
+      return GPIO_PORTS[0];
     case PortB:
-      return PORTS[1];
+      return GPIO_PORTS[1];
     case PortC:
-      return PORTS[2];
+      return GPIO_PORTS[2];
     case PortD:
-      return PORTS[3];
+      return GPIO_PORTS[3];
     case PortE:
-      return PORTS[4];
+      return GPIO_PORTS[4];
     default:
-      return PORTS[0];
+      return GPIO_PORTS[0];
   }
 }

@@ -3,71 +3,82 @@
 #include "../include/ports.h"
 #include "../include/uart.h"
 
-#define RCGCUART_R          (*((volatile uint32_t *)0x400FE618))
-#define RCGCGPIO_R          (*((volatile uint32_t *)0x400FE608))
-#define AFSEL_R             (*((volatile uint32_t *)0x40004420))
-#define PCTL_R              (*((volatile uint32_t *)0x4000452C))
-#define DEN_R               (*((volatile uint32_t *)0x4000451C))
+UARTPortRegisters UART_PORTS[2] = {
+  {
+    .DR = (volatile uint32_t *) (UART0_BASE),
+    .FR = (volatile uint32_t *) (UART0_UARTFR),
+    .IBRD = (volatile uint32_t *) (UART0_UARTIBRD),
+    .FBRD = (volatile uint32_t *) (UART0_UARTFBRD),
+    .LCRH = (volatile uint32_t *) (UART0_UARTLCRH),
+    .CTL = (volatile uint32_t *) (UART0_UARTCTL),
+    .RIS = (volatile uint32_t *) (UART0_UARTRIS),
+    .CC = (volatile uint32_t *) (UART0_UARTCC)
+  },
+  {
+    .DR = (volatile uint32_t *) (UART2_BASE),
+    .FR = (volatile uint32_t *) (UART2_UARTFR),
+    .IBRD = (volatile uint32_t *) (UART2_UARTIBRD),
+    .FBRD = (volatile uint32_t *) (UART2_UARTFBRD),
+    .LCRH = (volatile uint32_t *) (UART2_UARTLCRH),
+    .CTL = (volatile uint32_t *) (UART2_UARTCTL),
+    .RIS = (volatile uint32_t *) (UART2_UARTRIS),
+    .CC = (volatile uint32_t *) (UART2_UARTCC)
+  }
+};
 
-#define UART_CTL_R          (*((volatile uint32_t *)0x4000C030))
-#define UART_IBRD_R         (*((volatile uint32_t *)0x4000C024))
-#define UART_FBRD_R         (*((volatile uint32_t *)0x4000C028))
-#define UART_LCRH_R         (*((volatile uint32_t *)0x4000C02C))
-#define UART_CC_R           (*((volatile uint32_t *)0x4000CFC8))
+UARTPortRegisters
+UARTInitialize(PortTypes portType) {
+  UARTPortRegisters uartPort;
 
-void
-initializeUARTPort(GPIOPortRegisters port, uint32_t pins) {
-   // Disable analog on pins.
-  (*port.AMSEL) &= ~pins;
+  uint32_t portEnableMask;
+  uint32_t pins;
+  uint32_t pctl;
 
-  (*port.PCTL) = ((*port.PCTL) & 0xFFFFFF00) + 0x00000011;
+  if (portType == PortA) {
+    uartPort = UART_PORTS[0];
+    portEnableMask = 0x1UL;
+    pins = PORT_PIN_0 | PORT_PIN_1;
+    // Activate pins 0 and 1.
+    pctl = 0x11UL;
+  } else if (portType == PortC) {
+    uartPort = UART_PORTS[1];
+    portEnableMask = 0x4UL;
+    pins = PORT_PIN_6 | PORT_PIN_7;
+    // Activate pins 6 and 7.
+    pctl = 0x11000000UL;
+  }
 
-  // Enable alternative function on pins.
-  (*port.AFSEL) |= pins;
-
-  // Enable digital I/O on all required pins.
-  (*port.DEN) |= pins;
-}
-
-void UARTInitialize1() {
-  RCGCUART_R |= (1 << 0);
-  RCGCGPIO_R |= (1 << 0);
-
-  AFSEL_R = (1 << 1) | (1 << 0);
-  PCTL_R = (1 << 0) | (1 << 1);
-  DEN_R = (1 << 0) | (1 << 1);
-
-  UART_CTL_R &= ~(1 << 0);
-  UART_IBRD_R = 104;
-  UART_FBRD_R = 11;
-  UART_LCRH_R = (0x3 << 5);
-  UART_CC_R = 0x0;
-
-  UART_CTL_R = (1 << 0) | (1 << 8) | (1 << 9);
-}
-
-void
-UARTInitialize() {
-  // activate UART2.
-  SYSTEM_CTRL_RCGC1_R |= 0x00000001;
-
-  // activate port D.
-  SYSTEM_CTRL_RCGC2_R |= 0x00000001;
+  // activate UART port.
+  SYSTEM_CTRL_RCGC1_R |= portEnableMask;
+  SYSTEM_CTRL_RCGC2_R |= portEnableMask;
 
   // disable UART.
-  UART0_UARTCTL_R &= ~0x00000001;
+  (*uartPort.CTL) &= ~0x1UL;
 
-  // IBRD = int(80,000,000/(16*9600)) = int(520.833333333).
-  UART0_UARTIBRD_R = 104;
+  // IBRD = int(16,000,000/(16*9600)) = int(520.833333333).
+  (*uartPort.IBRD) = 104;
 
   // FBRD = round(0.833333333 * 64) = 53.
-  UART0_UARTFBRD_R  = 11;
+  (*uartPort.FBRD)  = 11;
 
   // 8 bit, no parity bits, one stop, FIFOs.
-  UART0_UARTLCRH_R = 0x00000070;
+  (*uartPort.LCRH) = 0x00000070;
 
-  // enable UART
-  UART0_UARTCTL_R |= 0x00000001;
+  // enable UART.
+  (*uartPort.CTL) |= 0x1UL;
 
-  initializeUARTPort(GetPort(PortA), PORT_PIN_0 | PORT_PIN_1);
+  GPIOPortRegisters gpioPort = GetPort(PortA);
+
+  // Disable analog on pins.
+  (*gpioPort.AMSEL) &= ~pins;
+
+  (*gpioPort.PCTL) |= pctl;
+
+  // Enable alternative function on pins.
+  (*gpioPort.AFSEL) |= pins;
+
+  // Enable digital I/O on all required pins.
+  (*gpioPort.DEN) |= pins;
+
+  return uartPort;
 }

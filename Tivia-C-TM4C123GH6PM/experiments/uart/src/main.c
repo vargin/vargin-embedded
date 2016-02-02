@@ -8,23 +8,17 @@
 // General-Purpose Input/Output Run Mode Clock Gating Control (spec, p. 340).
 #define SYSCTL_RCGCGPIO_R       (*((volatile uint32_t *)0x400FE608))
 
-#define UART0_UARTFR_R          (*((volatile uint32_t *)0x4000C018))
-#define UART0_UARTDR_R          (*((volatile uint32_t *)0x4000C000))
-
-#define UART2_UARTFR_R          (*((volatile uint32_t *)0x4000E018))
-#define UART2_UARTDR_R          (*((volatile uint32_t *)0x4000E000))
-
 void
-printChar(uint8_t c) {
-  while((UART0_UARTFR_R & (1 << 5)) != 0);
-  UART0_UARTDR_R = c;
+printChar(UARTPortRegisters port, uint8_t c) {
+  while(((*port.FR) & (1 << 5)) != 0);
+  (*port.DR) = c;
 }
 
 uint8_t
-readChar(void) {
+readChar(UARTPortRegisters port) {
   uint8_t c;
-  while((UART0_UARTFR_R & (1 << 4)) != 0);
-  c = UART0_UARTDR_R;
+  while(((*port.FR) & (1 << 4)) != 0);
+  c = (*port.DR);
   return c;
 }
 
@@ -66,9 +60,7 @@ initPorts(void)
 int
 main(void)
 {
-  SYSCTL_RCGCGPIO_R |= 0x00000002;
-
-  UARTInitialize();
+  UARTPortRegisters uartPort = UARTInitialize(PortA);
 
   initPorts();
 
@@ -81,8 +73,8 @@ main(void)
 
   uint8_t i = 0;
   while (1) {
-    printf("Value %#010x\n", readChar());
-    printChar(i++);
+    printf("Value %#010x\n", readChar(uartPort));
+    printChar(uartPort, i++);
     // printf("Value: %d\n", UART2_UARTFR_R);
     /*if ((*portB.PINS[0]) == PORT_PIN_0 || (UART0_UARTFR_R & 0x10UL) == 0) {
       data = (unsigned char)(UART0_UARTDR_R&0xFF);
