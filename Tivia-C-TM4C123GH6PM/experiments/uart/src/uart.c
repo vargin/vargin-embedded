@@ -30,27 +30,30 @@ UARTPortRegisters
 UARTInitialize(PortTypes portType) {
   UARTPortRegisters uartPort;
 
-  uint32_t portEnableMask;
+  uint32_t rcgc1;
+  uint32_t rcgc2;
   uint32_t pins;
   uint32_t pctl;
 
   if (portType == PortA) {
     uartPort = UART_PORTS[0];
-    portEnableMask = 0x1UL;
+    rcgc1 = 0x1UL;
+    rcgc2 = 0x1UL;
     pins = PORT_PIN_0 | PORT_PIN_1;
     // Activate pins 0 and 1.
     pctl = 0x11UL;
-  } else if (portType == PortC) {
+  } else if (portType == PortD) {
     uartPort = UART_PORTS[1];
-    portEnableMask = 0x4UL;
+    rcgc1 = 0x4UL;
+    rcgc2 = 0x8UL;
     pins = PORT_PIN_6 | PORT_PIN_7;
     // Activate pins 6 and 7.
     pctl = 0x11000000UL;
   }
 
   // activate UART port.
-  SYSTEM_CTRL_RCGC1_R |= portEnableMask;
-  SYSTEM_CTRL_RCGC2_R |= portEnableMask;
+  SYSTEM_CTRL_RCGC1_R |= rcgc1;
+  SYSTEM_CTRL_RCGC2_R |= rcgc2;
 
   // disable UART.
   (*uartPort.CTL) &= ~0x1UL;
@@ -67,7 +70,7 @@ UARTInitialize(PortTypes portType) {
   // enable UART.
   (*uartPort.CTL) |= 0x1UL;
 
-  GPIOPortRegisters gpioPort = GetPort(PortA);
+  GPIOPortRegisters gpioPort = GetPort(portType);
 
   // Disable analog on pins.
   (*gpioPort.AMSEL) &= ~pins;

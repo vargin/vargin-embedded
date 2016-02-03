@@ -73,7 +73,15 @@ main(void)
 
   uint8_t i = 0;
   while (1) {
-    printf("Value %#010x\n", readChar(uartPort));
+    uint8_t c = readChar(uartPort);
+    printf("Value %#010x %c\n", c, c);
+    printChar(uartPort, i++);
+    printChar(uartPort, i++);
+    printChar(uartPort, i++);
+    printChar(uartPort, i++);
+    printChar(uartPort, i++);
+    printChar(uartPort, i++);
+    printChar(uartPort, i++);
     printChar(uartPort, i++);
     // printf("Value: %d\n", UART2_UARTFR_R);
     /*if ((*portB.PINS[0]) == PORT_PIN_0 || (UART0_UARTFR_R & 0x10UL) == 0) {
