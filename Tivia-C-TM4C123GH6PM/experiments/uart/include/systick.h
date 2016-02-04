@@ -25,7 +25,7 @@ typedef struct
 extern volatile uint32_t timerTicks;
 
 extern void
-SysTickInitialize(uint32_t ticks);
+SysTickInitialize(uint32_t sysTickEventPeriod);
 
 extern void
 SysTickDelay(uint32_t ticks);

@@ -12,11 +12,11 @@ volatile uint32_t timerTicks;
 // ----------------------------------------------------------------------------
 
 void
-SysTickInitialize(uint32_t ticks)
+SysTickInitialize(uint32_t sysTickEventPeriod)
 {
   SysTick->CTRL = 0UL;
 
-  SysTick->RELOAD = TivaSystemCoreClock / ticks;
+  SysTick->RELOAD = sysTickEventPeriod;
   SysTick->CURRENT = 0UL;
 
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_MASK |
@@ -45,6 +45,9 @@ Tick(void)
 
 // ----- SysTick_Handler() ----------------------------------------------------
 
+// Handler is called every Clock / SysTick->RELOAD times, so if say we have
+// 66.67 Mhz clock and we set 66670 as Reaload register - that means or handler
+// will be called every 1ms.
 void
 SysTick_Handler(void)
 {
