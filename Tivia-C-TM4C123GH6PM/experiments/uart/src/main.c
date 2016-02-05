@@ -64,39 +64,26 @@ main(void)
 
   initPorts();
 
-  //PLLInitialize(4);
+  // Enable 80Mhz clock.
+  PLLInitialize(4);
 
-  // Use 1ms gradation.
-  //SysTickInitialize(1000UL);
+  // Use 1ms gradation for 80Mhz clock.
+  SysTickInitialize(80000UL);
 
   unsigned char data;
 
   uint8_t i = 0;
   while (1) {
     uint8_t c = readChar(uartPort);
+
     printf("Value %#010x %c\n", c, c);
+
+    // Just blink once to indicate that we've received byte.
+    (*portB.PINS[1]) = PORT_PIN_1;
+    SysTickDelay(100);
+    (*portB.PINS[1]) = 0x0;
+
     printChar(uartPort, i++);
-    printChar(uartPort, i++);
-    printChar(uartPort, i++);
-    printChar(uartPort, i++);
-    printChar(uartPort, i++);
-    printChar(uartPort, i++);
-    printChar(uartPort, i++);
-    printChar(uartPort, i++);
-    // printf("Value: %d\n", UART2_UARTFR_R);
-    /*if ((*portB.PINS[0]) == PORT_PIN_0 || (UART0_UARTFR_R & 0x10UL) == 0) {
-      data = (unsigned char)(UART0_UARTDR_R&0xFF);
-      if (data) {
-        printf("Data %#010x %c\n", data, data);
-        (*portB.PINS[1]) = PORT_PIN_1;
-        //SysTickDelay(500);
-      }
-    } else {
-      (*portB.PINS[1]) = 0x0UL;
-    }*/
-    //if (UART2_UARTFR_RXFE_R == 0) {
-      //((unsigned char)(UART1_DR_R&0xFF));
-    //}
   }
 
   return 0;

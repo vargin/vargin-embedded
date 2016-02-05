@@ -58,11 +58,11 @@ UARTInitialize(PortTypes portType) {
   // disable UART.
   (*uartPort.CTL) &= ~0x1UL;
 
-  // IBRD = int(16,000,000/(16*9600)) = int(520.833333333).
-  (*uartPort.IBRD) = 104;
+  // IBRD = int(80,000,000/(16*9600)) = int(520.833333333).
+  (*uartPort.IBRD) = 520;
 
   // FBRD = round(0.833333333 * 64) = 53.
-  (*uartPort.FBRD)  = 11;
+  (*uartPort.FBRD)  = 53;
 
   // 8 bit, no parity bits, one stop, FIFOs.
   (*uartPort.LCRH) = 0x00000070;
