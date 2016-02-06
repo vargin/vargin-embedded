@@ -60,7 +60,7 @@ initPorts(void)
 int
 main(void)
 {
-  UARTPortRegisters uartPort = UARTInitialize(PortA);
+  UARTPortRegisters uartPort = UARTInitialize(PortD);
 
   initPorts();
 
@@ -70,20 +70,15 @@ main(void)
   // Use 1ms gradation for 80Mhz clock.
   SysTickInitialize(80000UL);
 
-  unsigned char data;
-
-  uint8_t i = 0;
   while (1) {
     uint8_t c = readChar(uartPort);
 
     printf("Value %#010x %c\n", c, c);
-
     // Just blink once to indicate that we've received byte.
     (*portB.PINS[1]) = PORT_PIN_1;
     SysTickDelay(100);
+    printChar(uartPort, c);
     (*portB.PINS[1]) = 0x0;
-
-    printChar(uartPort, i++);
   }
 
   return 0;

@@ -3,6 +3,9 @@
 #include "../include/ports.h"
 #include "../include/uart.h"
 
+#define GPIO_PORTD_LOCK_R       (*((volatile uint32_t *)0x40007520))
+#define GPIO_PORTD_CR_R         (*((volatile uint32_t *)0x40007524))
+
 UARTPortRegisters UART_PORTS[2] = {
   {
     .DR = (volatile uint32_t *) (UART0_BASE),
@@ -23,6 +26,16 @@ UARTPortRegisters UART_PORTS[2] = {
     .CTL = (volatile uint32_t *) (UART2_UARTCTL),
     .RIS = (volatile uint32_t *) (UART2_UARTRIS),
     .CC = (volatile uint32_t *) (UART2_UARTCC)
+  },
+  {
+    .DR = (volatile uint32_t *) (UART3_BASE),
+    .FR = (volatile uint32_t *) (UART3_UARTFR),
+    .IBRD = (volatile uint32_t *) (UART3_UARTIBRD),
+    .FBRD = (volatile uint32_t *) (UART3_UARTFBRD),
+    .LCRH = (volatile uint32_t *) (UART3_UARTLCRH),
+    .CTL = (volatile uint32_t *) (UART3_UARTCTL),
+    .RIS = (volatile uint32_t *) (UART3_UARTRIS),
+    .CC = (volatile uint32_t *) (UART3_UARTCC)
   }
 };
 
@@ -71,6 +84,14 @@ UARTInitialize(PortTypes portType) {
   (*uartPort.CTL) |= 0x1UL;
 
   GPIOPortRegisters gpioPort = GetPort(portType);
+
+  if (portType == PortD) {
+    // 2) unlock GPIO Port D
+    GPIO_PORTD_LOCK_R = 0x4C4F434B;
+
+    // allow changes to PD6-7
+    GPIO_PORTD_CR_R = 0xC0;
+  }
 
   // Disable analog on pins.
   (*gpioPort.AMSEL) &= ~pins;
