@@ -49,6 +49,15 @@ void Nokia5110_Init(void);
 // assumes: LCD is in default horizontal addressing mode (V = 0)
 void Nokia5110_OutChar(char data);
 
+//********Nokia5110_OutString*****************
+// Print a string of characters to the Nokia 5110 48x84 LCD.
+// The string will automatically wrap, so padding spaces may
+// be needed to make the output look optimal.
+// inputs: ptr  pointer to NULL-terminated ASCII string
+// outputs: none
+// assumes: LCD is in default horizontal addressing mode (V = 0)
+void Nokia5110_OutString(char *ptr);
+
 //********Nokia5110_OutUDec*****************
 // Output a 16-bit number in unsigned decimal format with a
 // fixed size of five right-justified digits of output.
@@ -73,27 +82,9 @@ void Nokia5110_SetCursor(uint8_t newX, uint8_t newY);
 // outputs: none
 void Nokia5110_Clear(void);
 
-// There is a buffer in RAM that holds one screen
-// This routine clears this buffer
-void Nokia5110_ClearBuffer(void);
-
-//********Nokia5110_DisplayBuffer*****************
-// Fill the whole screen by drawing a 48x84 screen image.
-// inputs: none
+//********Nokia5110_DrawFullImage*****************
+// Fill the whole screen by drawing a 48x84 bitmap image.
+// inputs: ptr  pointer to 504 byte bitmap
 // outputs: none
 // assumes: LCD is in default horizontal addressing mode (V = 0)
-void Nokia5110_DisplayBuffer(void);
-
-//------------Nokia5110_ClrPxl------------
-// Clear the Image pixel at (i, j), turning it dark.
-// Input: i  the row index  (0 to 47 in this case),    y-coordinate
-//        j  the column index  (0 to 83 in this case), x-coordinate
-// Output: none
-void Nokia5110_ClrPxl(uint32_t i, uint32_t j);
-
-//------------Nokia5110_SetPxl------------
-// Set the Image pixel at (i, j), turning it on.
-// Input: i  the row index  (0 to 47 in this case),    y-coordinate
-//        j  the column index  (0 to 83 in this case), x-coordinate
-// Output: none
-void Nokia5110_SetPxl(uint32_t i, uint32_t j);
+void Nokia5110_DrawFullImage(const uint8_t *ptr);

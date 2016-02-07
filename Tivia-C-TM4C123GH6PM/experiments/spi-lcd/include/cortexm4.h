@@ -9,11 +9,109 @@
 // Run-Mode Clock Configuration 2 (RCC2), offset 0x070
 #define System_CTRL_RCC2           (System_CTRL_BASE + 0x070UL)
 
-// Run Mode Clock Gating Control Register 1 (RCGC1), offset 0x104
-#define System_CTRL_RCGC1           (System_CTRL_BASE + 0x104UL)
 
-// Run Mode Clock Gating Control Register 2 (RCGC2), offset 0x108
-#define System_CTRL_RCGC2           (System_CTRL_BASE + 0x108UL)
+/** Run Mode Clock Gating Control Register 1 (RCGC1) **/
+
+// Offset 0x104
+#define System_CTRL_RCGC1                     (System_CTRL_BASE + 0x104UL)
+// SSI0 Clock Gating Control
+#define System_CTRL_RCGC1_SSI0_MASK           (0x10UL)
+#define System_CTRL_RCGC1_SSI1_MASK           (0x20UL)
+
+#define System_CTRL_RCGC1_R                   (*((volatile uint32_t *)System_CTRL_RCGC1))
+
+/** ------------------------------------------------ **/
+
+/** Run Mode Clock Gating Control Register 2 (RCGC2) **/
+
+// Offset 0x108
+#define System_CTRL_RCGC2                 (System_CTRL_BASE + 0x108UL)
+#define System_CTRL_RCGC2_GPIOA_MASK      (0x1UL)
+#define System_CTRL_RCGC2_GPIOB_MASK      (0x2UL)
+#define System_CTRL_RCGC2_GPIOC_MASK      (0x4UL)
+#define System_CTRL_RCGC2_GPIOD_MASK      (0x8UL)
+
+#define System_CTRL_RCGC2_R                   (*((volatile uint32_t *)System_CTRL_RCGC2))
+
+/** ------------------------------------------------ **/
+
+/** Synchronous Serial Interface Run Mode Clock Gating Control (RCGCSSI) **/
+
+#define System_CTRL_RCGCSSI                     (System_CTRL_BASE + 0x61CUL)
+#define System_CTRL_RCGCSSI_SSI0_MASK           (0x1UL)
+#define System_CTRL_RCGCSSI_SSI1_MASK           (0x2UL)
+#define System_CTRL_RCGCSSI_SSI2_MASK           (0x4UL)
+#define System_CTRL_RCGCSSI_SSI3_MASK           (0x8UL)
+
+#define System_CTRL_RCGCSSI_R                   (*((volatile uint32_t *)System_CTRL_RCGCSSI))
+/** ------------------------------------------------ **/
+
+/** General-Purpose Input/Output Run Mode Clock Gating Control (RCGCGPIO) **/
+
+#define System_CTRL_RCGCGPIO                      (System_CTRL_BASE + 0x608UL)
+#define System_CTRL_RCGCGPIO_GPIOA_MASK           (0x1UL)
+#define System_CTRL_RCGCGPIO_GPIOB_MASK           (0x2UL)
+#define System_CTRL_RCGCGPIO_GPIOC_MASK           (0x4UL)
+#define System_CTRL_RCGCGPIO_GPIOD_MASK           (0x8UL)
+#define System_CTRL_RCGCGPIO_GPIOE_MASK           (0x10UL)
+#define System_CTRL_RCGCGPIO_GPIOF_MASK           (0x20UL)
+
+#define System_CTRL_RCGCGPIO_R                    (*((volatile uint32_t *)System_CTRL_RCGCGPIO))
+/** ------------------------------------------------ **/
+
+
+#define SSI0_BASE (0x40008000UL)
+#define SSI1_BASE (0x40009000UL)
+#define SSI2_BASE (0x4000A000UL)
+#define SSI3_BASE (0x4000B000UL)
+
+/** SSI Control 1 (SSICR1) **/
+
+// SSI Serial Clock Rate.
+#define SSI_SSICR0_SCR_M          (0xFF00UL)
+// SSI Serial Clock Phase.
+#define SSI_SSICR0_SPH            (0x80UL)
+// SSI Serial Clock Polarity.
+#define SSI_SSICR0_SPO            (0x40UL)
+// SSI Frame Format Select.
+#define SSI_SSICR0_FRF_M          (0x30UL)
+// Freescale SPI Frame Format.
+#define SSI_SSICR0_FRF_MOTO       (0x00UL)
+// SSI Data Size Select.
+#define SSI_SSICR0_DSS_M          (0x0FUL)
+// 8-bit data.
+#define SSI_SSICR0_DSS_8          (0x07UL)
+
+#define SSI0_SSICR0             (SSI0_BASE)
+#define SSI0_SSICR0_R           (*((volatile uint32_t *)SSI0_SSICR0))
+
+/** ------------------------------------------------ **/
+
+/** SSI Control 1 (SSICR1) **/
+#define SSI_SSICR1_SSE_MASK    (0x2UL)
+#define SSI_SSICR1_MS_MASK     (0x4UL)
+
+#define SSI0_SSICR1             (SSI0_BASE + 0x004UL)
+#define SSI0_SSICR1_R           (*((volatile uint32_t *)SSI0_SSICR1))
+
+/** ------------------------------------------------ **/
+
+/** SSI Clock Configuration (SSICC) **/
+#define SSI_SSICC_CS_M          (0xFUL)
+#define SSI_SSICC_CS_SYSCLK     (0x0UL)
+
+#define SSI0_SSICC            (SSI0_BASE + 0xFC8UL)
+#define SSI0_SSICC_R          (*((volatile uint32_t *)SSI0_SSICC))
+
+/** ------------------------------------------------ **/
+
+/** SSI Clock Prescale (SSICPSR) **/
+#define SSI_SSICPSR_CPSDVSR_M          (0xFFUL)
+
+#define SSI0_SSICPSR            (SSI0_BASE + 0x010UL)
+#define SSI0_SSICPSR_R          (*((volatile uint32_t *)SSI0_SSICPSR))
+
+/** ------------------------------------------------ **/
 
 // XTAL configuration for 16MHz.
 #define System_CTRL_RCC_XTAL_ALL_MASK     (0x7C0UL)
