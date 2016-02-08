@@ -10,6 +10,8 @@
 // SSI0Clk       (SCLK, pin 7) connected to PA2
 // back light    (LED, pin 8) not connected, consists of 4 white LEDs which draw ~80mA total
 #include <stdint.h>
+#include "../include/ports.h"
+#include "../include/systick.h"
 #include "../include/ssi.h"
 #include "../include/nokia5110.h"
 
@@ -17,10 +19,6 @@
 #define DC                      (*((volatile uint32_t *)0x40004100))
 #define DC_COMMAND              0
 #define DC_DATA                 0x40
-// Port A, Pin 7 - Data
-#define RESET                   (*((volatile uint32_t *)0x40004200))
-#define RESET_LOW               0
-#define RESET_HIGH              0x80
 
 #define SSI0_DR_R               (*((volatile uint32_t *)0x40008008))
 #define SSI0_SR_R               (*((volatile uint32_t *)0x4000800C))
@@ -33,6 +31,8 @@ enum typeOfWrite{
   COMMAND,                              // the transmission is an LCD command
   DATA                                  // the transmission is data
 };
+
+GPIOPortRegisters servicePort;
 
 
 // This table contains the hex values that represent pixels
@@ -178,6 +178,27 @@ void static lcddatawrite(uint8_t data){
   SSI0_DR_R = data;                // data out
 }
 
+void writeToResetPin(uint32_t data) {
+  (*servicePort.PINS[7]) = data;
+}
+
+void writeToCommandPin(uint32_t data) {
+  (*servicePort.PINS[6]) = data;
+}
+
+void initializeControlPort() {
+  // 6 - command chooser pin, 7 - reset pin.
+  uint32_t servicePins = PORT_PIN_6 | PORT_PIN_7;
+
+  servicePort = GetPort(PortA);
+
+  (*servicePort.DIR) |= servicePins;
+  (*servicePort.AFSEL) &= ~servicePins;
+  (*servicePort.AMSEL) &= ~servicePins;
+  (*servicePort.DEN) |= servicePins;
+  (*servicePort.PCTL) = ((*servicePort.PCTL) & 0x00FFFFFF);
+}
+
 //********Nokia5110_Init*****************
 // Initialize Nokia 5110 48x84 LCD by sending the proper
 // commands to the PCD8544 driver.  One new feature of the
@@ -188,17 +209,18 @@ void static lcddatawrite(uint8_t data){
 // outputs: none
 // assumes: system clock rate of 50 MHz
 void Nokia5110_Init(void){
-  volatile uint32_t delay;
-
   // Nokia 5110 LCD max clock frequency is 4Mhz, so with 50Mhz system clock,
   // clock prescale divisor (must be even number) is calculated via
   // SysClk/(CPSDVSR*(1+SCR)) formula, where SCR=0, so 50 / (14 * (1 + 0)) =
   // 3.571 MHz (slower than 4 MHz).
-  InitializeSSI(SSI0, 14);
+  InitializeSSI(SSI0Module, 14);
 
-  RESET = RESET_LOW;                    // reset the LCD to a known state
-  for(delay=0; delay<400; delay=delay+1);// delay minimum 100 ns
-  RESET = RESET_HIGH;                   // negative logic
+  initializeControlPort();
+
+  // Reset to a known state, wait for 100ms between writes.
+  writeToResetPin(0);
+  SysTickDelay(100);
+  writeToResetPin(0x80);
 
   lcdwrite(COMMAND, 0x21);              // chip active; horizontal addressing mode (V = 0); use extended instruction set (H = 1)
   // set LCD Vop (contrast), which may require some tweaking:
