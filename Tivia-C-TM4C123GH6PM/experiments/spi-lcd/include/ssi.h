@@ -1,7 +1,7 @@
 typedef enum {SSI0Module} SSIModules;
 
 /**
- * Structure type to access the System Timer (SysTick).
+ * Structure type to access the SSI.
  */
 typedef struct
 {
@@ -40,9 +40,9 @@ typedef struct
 
   // Offset: 0xFC8 SSI Clock Configuration Register.
   volatile uint32_t SSICC;
-} SSIType;
+} SSIRegisters;
 
-#define SSI0  ((SSIType *) SSI0_BASE)
+#define SSI0  ((SSIRegisters *) SSI0_BASE)
 
-void
+SSIRegisters *
 InitializeSSI(SSIModules module, uint8_t clockPrescaleDivisor);

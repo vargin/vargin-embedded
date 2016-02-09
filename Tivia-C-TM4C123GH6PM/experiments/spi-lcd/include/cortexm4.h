@@ -178,6 +178,22 @@
 /*!< SysTick CTRL: TICKINT Mask */
 #define SysTick_CTRL_TICKINT_MASK           (1UL << SysTick_CTRL_TICKINT_POS)
 
+#define GPIOA_BASE          (0x40004000UL)
+#define GPIOB_BASE          (0x40005000UL)
+#define GPIOC_BASE          (0x40006000UL)
+#define GPIOD_BASE          (0x40007000UL)
+#define GPIOE_BASE          (0x40024000UL)
+#define GPIOF_BASE          (0x40025000UL)
+
+#define GPIO_PORT_PIN_0              (0x01UL)
+#define GPIO_PORT_PIN_1              (0x02UL)
+#define GPIO_PORT_PIN_2              (0x04UL)
+#define GPIO_PORT_PIN_3              (0x08UL)
+#define GPIO_PORT_PIN_4              (0x10UL)
+#define GPIO_PORT_PIN_5              (0x20UL)
+#define GPIO_PORT_PIN_6              (0x40UL)
+#define GPIO_PORT_PIN_7              (0x80UL)
+
 #define UART0_BASE (0x4000C000)
 #define UART1_BASE (0x4000D000)
 #define UART2_BASE (0x4000E000)

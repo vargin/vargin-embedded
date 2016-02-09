@@ -32,8 +32,7 @@ enum typeOfWrite{
   DATA                                  // the transmission is data
 };
 
-GPIOPortRegisters servicePort;
-
+static GPIORegisters* SERVICE_PORT = GPIOA;
 
 // This table contains the hex values that represent pixels
 // for a font that is 5 pixels wide and 8 pixels high
@@ -158,7 +157,8 @@ static const uint8_t ASCII[][5] = {
 //         message  8-bit code to transmit
 // outputs: none
 // assumes: SSI0 and port A have already been initialized and enabled
-void static lcdwrite(enum typeOfWrite type, uint8_t message){
+static void
+lcdwrite(enum typeOfWrite type, uint8_t message){
   if(type == COMMAND){
     // wait until SSI0 not busy/transmit FIFO empty
     while((SSI0_SR_R&SSI_SR_BSY)==SSI_SR_BSY){};
@@ -172,31 +172,30 @@ void static lcdwrite(enum typeOfWrite type, uint8_t message){
     SSI0_DR_R = message;                // data out
   }
 }
-void static lcddatawrite(uint8_t data){
+static void
+lcddatawrite(uint8_t data){
   while((SSI0_SR_R&0x00000002)==0){}; // wait until transmit FIFO not full
   DC = DC_DATA;
   SSI0_DR_R = data;                // data out
 }
 
 void writeToResetPin(uint32_t data) {
-  (*servicePort.PINS[7]) = data;
+  SERVICE_PORT->PIN7 = data;
 }
 
 void writeToCommandPin(uint32_t data) {
-  (*servicePort.PINS[6]) = data;
+  SERVICE_PORT->PIN6 = data;
 }
 
 void initializeControlPort() {
   // 6 - command chooser pin, 7 - reset pin.
-  uint32_t servicePins = PORT_PIN_6 | PORT_PIN_7;
+  uint32_t servicePins = GPIO_PORT_PIN_6 | GPIO_PORT_PIN_7;
 
-  servicePort = GetPort(PortA);
-
-  (*servicePort.DIR) |= servicePins;
-  (*servicePort.AFSEL) &= ~servicePins;
-  (*servicePort.AMSEL) &= ~servicePins;
-  (*servicePort.DEN) |= servicePins;
-  (*servicePort.PCTL) = ((*servicePort.PCTL) & 0x00FFFFFF);
+  SERVICE_PORT->DIR |= servicePins;
+  SERVICE_PORT->AFSEL &= ~servicePins;
+  SERVICE_PORT->AMSEL &= ~servicePins;
+  SERVICE_PORT->DEN |= servicePins;
+  SERVICE_PORT->PCTL &= 0x00FFFFFF;
 }
 
 //********Nokia5110_Init*****************
