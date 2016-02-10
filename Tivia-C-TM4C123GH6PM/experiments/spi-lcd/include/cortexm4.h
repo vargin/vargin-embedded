@@ -82,34 +82,34 @@
 // 8-bit data.
 #define SSI_SSICR0_DSS_8          (0x07UL)
 
-#define SSI0_SSICR0             (SSI0_BASE)
-#define SSI0_SSICR0_R           (*((volatile uint32_t *)SSI0_SSICR0))
-
 /** ------------------------------------------------ **/
 
 /** SSI Control 1 (SSICR1) **/
+
 #define SSI_SSICR1_SSE_MASK    (0x2UL)
 #define SSI_SSICR1_MS_MASK     (0x4UL)
 
-#define SSI0_SSICR1             (SSI0_BASE + 0x004UL)
-#define SSI0_SSICR1_R           (*((volatile uint32_t *)SSI0_SSICR1))
+/** ------------------------------------------------ **/
+
+/** SSI Status (SSISR), offset 0x00C **/
+
+// SSI Transmit FIFO Not Full.
+#define SSI_SSISR_TNF_MASK    (0x02UL)
+
+// SSI Busy Bit.
+#define SSI_SSISR_BSY_MASK    (0x10UL)
 
 /** ------------------------------------------------ **/
 
 /** SSI Clock Configuration (SSICC) **/
+
 #define SSI_SSICC_CS_M          (0xFUL)
 #define SSI_SSICC_CS_SYSCLK     (0x0UL)
-
-#define SSI0_SSICC            (SSI0_BASE + 0xFC8UL)
-#define SSI0_SSICC_R          (*((volatile uint32_t *)SSI0_SSICC))
 
 /** ------------------------------------------------ **/
 
 /** SSI Clock Prescale (SSICPSR) **/
 #define SSI_SSICPSR_CPSDVSR_M          (0xFFUL)
-
-#define SSI0_SSICPSR            (SSI0_BASE + 0x010UL)
-#define SSI0_SSICPSR_R          (*((volatile uint32_t *)SSI0_SSICPSR))
 
 /** ------------------------------------------------ **/
 
