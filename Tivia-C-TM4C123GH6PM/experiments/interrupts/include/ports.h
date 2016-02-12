@@ -60,7 +60,7 @@ typedef struct
   const uint32_t IE;
 
   // Offset: 0x410 GPIO Interrupt Mask Register.
-  const uint32_t IM;
+  volatile uint32_t IM;
 
   // Offset: 0x414 GPIO Raw Interrupt Status Register.
   volatile uint32_t RIS;
@@ -69,7 +69,7 @@ typedef struct
   const uint32_t MIS;
 
   // Offset: 0x41C GPIO Interrupt Clear Register.
-  const uint32_t ICR;
+  volatile uint32_t ICR;
 
   // Offset: 0x420 GPIO Alternate Function Select Register.
   volatile uint32_t AFSEL;
