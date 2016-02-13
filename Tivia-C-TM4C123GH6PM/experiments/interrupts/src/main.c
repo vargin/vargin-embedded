@@ -1,21 +1,11 @@
 #include <stdint.h>
-#include "../include/pll.h"
-#include "../include/systick.h"
 #include "../include/cortexm4.h"
 #include "../include/ports.h"
+#include "../include/nvic.h"
 
-#define NVIC_EN0_R   (*((volatile uint32_t *)0xE000E100))
 #define NVIC_PRI0_R  (*((volatile uint32_t *)0xE000E400))
 
-
-
 int main(void){
-  // Set system clock to 50 MHz.
-  PLLInitialize(7);
-
-  // Use 1ms gradation for 50 Mhz clock.
-  SysTickInitialize(50000UL);
-
   uint32_t inputPins = GPIO_PORT_PIN_2;
   uint32_t outputPins = GPIO_PORT_PIN_3;
 
@@ -39,15 +29,14 @@ int main(void){
 
   GPIOA->IM |= inputPins;
 
-  NVIC_PRI0_R |= 0x20;
-  NVIC_EN0_R |= 0x01;
+  NVIC->PRI0 |= 0x20;
+  NVIC->EN0 |= 0x01;
 
   while(1) {
   }
 }
 
-
-void DeviceInterrupt_Handler(void) {
+void GPIOPortA_Handler(void) {
   GPIOA->ICR |= GPIO_PORT_PIN_2;
   GPIOA->PIN3 = ~GPIOA->PIN3;
 }

@@ -20,7 +20,7 @@ Default_Handler(void);
 // TODO: Rename this and add the actual routines here.
 
 void __attribute__ ((weak, alias ("Default_Handler")))
-DeviceInterrupt_Handler(void);
+GPIOPortA_Handler(void);
 
 // ----------------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ pHandler __isr_vectors[] =
 
         // ----------------------------------------------------------------------
         // DEVICE vectors
-        DeviceInterrupt_Handler,                  // Device specific
+        GPIOPortA_Handler,                  // Device specific
     // TODO: rename and add more vectors here
     };
 
