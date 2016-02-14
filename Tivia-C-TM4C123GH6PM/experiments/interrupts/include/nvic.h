@@ -106,7 +106,7 @@ typedef struct
   const uint32_t PRI4;
 
   // Interrupt 20-23 Priority (PRI5), offset 0x414
-  const uint32_t PRI5;
+  volatile uint32_t PRI5;
 
   // Interrupt 24-27 Priority (PRI6), offset 0x418
   const uint32_t PRI6;

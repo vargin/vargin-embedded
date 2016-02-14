@@ -114,3 +114,7 @@ typedef struct
 } GPIORegisters;
 
 #define GPIOA  ((GPIORegisters *) GPIOA_BASE)
+#define GPIOB  ((GPIORegisters *) GPIOB_BASE)
+#define GPIOC  ((GPIORegisters *) GPIOC_BASE)
+#define GPIOD  ((GPIORegisters *) GPIOD_BASE)
+#define GPIOE  ((GPIORegisters *) GPIOE_BASE)

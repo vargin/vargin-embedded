@@ -22,6 +22,18 @@ Default_Handler(void);
 void __attribute__ ((weak, alias ("Default_Handler")))
 GPIOPortA_Handler(void);
 
+void __attribute__ ((weak, alias ("Default_Handler")))
+GPIOPortB_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+GPIOPortC_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+GPIOPortD_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+GPIOPortE_Handler(void);
+
 // ----------------------------------------------------------------------------
 
 extern unsigned int _estack;
@@ -66,7 +78,11 @@ pHandler __isr_vectors[] =
 
         // ----------------------------------------------------------------------
         // DEVICE vectors
-        GPIOPortA_Handler,                  // Device specific
+        GPIOPortA_Handler,
+        GPIOPortB_Handler,
+        GPIOPortC_Handler,
+        GPIOPortD_Handler,
+        GPIOPortE_Handler
     // TODO: rename and add more vectors here
     };
 
