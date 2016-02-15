@@ -54,7 +54,7 @@ typedef struct
   const uint32_t IS;
 
   // Offset: 0x408 GPIO Interrupt Both Edges Register.
-  const uint32_t IBE;
+  volatile uint32_t IBE;
 
   // Offset: 0x40C Interrupt Event Register.
   const uint32_t IE;

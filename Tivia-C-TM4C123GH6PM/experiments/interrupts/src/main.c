@@ -30,6 +30,9 @@ int main(void){
 
   GPIOE->IM |= inputPins;
 
+  // Generate interrupt on both touch and release!
+  GPIOE->IBE |= inputPins;
+
   // Port E is Interrupt 20.
   NVIC->PRI5 |= 0x20;
   NVIC->EN0 |= 0x10;
