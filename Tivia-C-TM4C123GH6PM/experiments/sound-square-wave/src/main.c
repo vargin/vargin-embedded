@@ -7,6 +7,8 @@
 
 #define NVIC_PRI0_R  (*((volatile uint32_t *)0xE000E400))
 
+unsigned char isSoundEnabled = 0;
+
 int main(void){
   // Enable 80Mhz clock.
   PLLInitialize(4);
@@ -46,13 +48,15 @@ int main(void){
   NVIC->EN0 |= 0x10;
 
   while(1) {
-    GPIOB->PIN3 = ~GPIOB->PIN3;
-    SysTickDelay(1);
+    if (isSoundEnabled) {
+      GPIOB->PIN3 = ~GPIOB->PIN3;
+      SysTickDelay(1);
+    }
   }
 }
 
 void GPIOPortE_Handler(void) {
   GPIOE->ICR |= GPIO_PORT_PIN_0;
-  GPIOB->PIN3 = ~GPIOB->PIN3;
+  isSoundEnabled = ~isSoundEnabled;
 }
 
