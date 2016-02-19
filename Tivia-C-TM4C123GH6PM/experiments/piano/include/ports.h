@@ -7,7 +7,7 @@
 typedef struct
 {
   // Offset: 0x000 GPIO Data Register.
-  volatile uint32_t DATA;
+  const uint32_t RESERVED0[1];
 
   // Offset: 0x004 PIN0 Data Register.
   volatile uint32_t PIN0;
@@ -45,7 +45,10 @@ typedef struct
   // Offset: 0x200 PIN7 Data Register.
   volatile uint32_t PIN7;
 
-  const uint32_t RESERVED6[127];
+  const uint32_t RESERVED6[126];
+
+  // Offset: 0x3FC All PINs Data Register.
+  volatile uint32_t DATA;
 
   // Offset: 0x400 GPIO Direction Register.
   volatile uint32_t DIR;

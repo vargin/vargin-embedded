@@ -2,6 +2,10 @@
 #include "../include/cortexm4.h"
 #include "../include/systick.h"
 
+typedef void (*TickerType)(void);
+
+TickerType ticker;
+
 void
 Tick(void);
 
@@ -14,14 +18,21 @@ volatile uint32_t timerTicks;
 void
 SysTickInitialize(uint32_t sysTickEventPeriod)
 {
+  SysTickInitializeWithCustomTicker(sysTickEventPeriod, Tick);
+}
+
+void
+SysTickInitializeWithCustomTicker(uint32_t sysTickEventPeriod, TickerType customTicker) {
   SysTick->CTRL = 0UL;
 
   SysTick->RELOAD = sysTickEventPeriod;
   SysTick->CURRENT = 0UL;
 
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_MASK |
-    SysTick_CTRL_TICKINT_MASK |
-    SysTick_CTRL_ENABLE_MASK;
+                  SysTick_CTRL_TICKINT_MASK |
+                  SysTick_CTRL_ENABLE_MASK;
+
+  ticker = customTicker;
 }
 
 void
@@ -51,7 +62,7 @@ Tick(void)
 void
 SysTick_Handler(void)
 {
-  Tick();
+  ticker();
 }
 
 // ----------------------------------------------------------------------------
