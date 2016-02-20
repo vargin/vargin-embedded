@@ -18,6 +18,9 @@ uint8_t isSoundEnabled = 0;
 #define E   7584 // 659.3 Hz
 #define G   6377 // 784 Hz
 
+const uint8_t INPUT_PINS =  GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
+const uint8_t OUTPUT_PINS =  GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
+
 const uint8_t SineWave[16] = { 4, 5, 6, 7, 7, 7, 6, 5, 4, 3, 2, 1, 1, 1, 2, 3 };
 uint8_t waveIndex = 0;
 
@@ -37,34 +40,29 @@ int main(void){
   // Enable 80Mhz clock.
   PLLInitialize(4);
 
-  SysTickInitializeWithCustomTicker(C_0, OnTick);
-
-  uint32_t inputPins = GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
-  uint32_t outputPins = GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
-
   // Activate GPIO ports B and E.
   System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOB_MASK |
                             System_CTRL_RCGCGPIO_GPIOE_MASK;
 
-  GPIOE->AFSEL &= ~inputPins;
-  GPIOB->AFSEL &= ~outputPins;
+  GPIOE->AFSEL &= ~INPUT_PINS;
+  GPIOB->AFSEL &= ~OUTPUT_PINS;
 
-  GPIOE->AMSEL &= ~inputPins;
-  GPIOB->AMSEL &= ~outputPins;
+  GPIOE->AMSEL &= ~INPUT_PINS;
+  GPIOB->AMSEL &= ~OUTPUT_PINS;
 
-  GPIOE->PCTL &= ~inputPins;
-  GPIOB->PCTL &= ~outputPins;
+  GPIOE->PCTL &= ~INPUT_PINS;
+  GPIOB->PCTL &= ~OUTPUT_PINS;
 
-  GPIOE->DIR &= ~inputPins;
-  GPIOB->DIR |= outputPins;
+  GPIOE->DIR &= ~INPUT_PINS;
+  GPIOB->DIR |= OUTPUT_PINS;
 
-  GPIOE->DEN |= inputPins;
-  GPIOB->DEN |= outputPins;
+  GPIOE->DEN |= INPUT_PINS;
+  GPIOB->DEN |= OUTPUT_PINS;
 
-  GPIOE->IM |= inputPins;
+  GPIOE->IM |= INPUT_PINS;
 
   // Generate interrupt on both touch and release!
-  GPIOE->IBE |= inputPins;
+  GPIOE->IBE |= INPUT_PINS;
 
   // Port E is Interrupt 20.
   NVIC->PRI5 |= 0x20;
@@ -75,13 +73,13 @@ int main(void){
 }
 
 void GPIOPortE_Handler(void) {
-  GPIOE->ICR |= GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
+  GPIOE->ICR |= INPUT_PINS;
   isSoundEnabled = ~isSoundEnabled;
 
   if (isSoundEnabled) {
-    uint32_t note;
     uint8_t data = GPIOE->DATA & 0x0F;
 
+    uint32_t note;
     switch(data) {
       case 1: note = C_0; break;
       case 2: note = D; break;
