@@ -1,76 +1,75 @@
 #include <stdint.h>
+#include <stdio.h>
 #include "../include/cortexm4.h"
 #include "../include/pll.h"
 #include "../include/systick.h"
 #include "../include/ports.h"
-#include "../include/nvic.h"
+#include "../include/adc.h"
+#include "../include/nokia5110.h"
 
-const uint8_t INPUT_PINS =  GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
-const uint8_t OUTPUT_PINS =  GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
+uint32_t ReadADC0(void) {
+  unsigned long result;
 
-void
-DAC_Out(uint8_t number) {
-  GPIOB->DATA = number;
-}
+  // Initiate SS3.
+  ADC0->ADCPSSI = 0x0008;
 
-void
-OnTick(void) {
-  waveIndex = (waveIndex + 1) & 0x0F;
+  // Wait for conversion done.
+  while((ADC0->ADCRIS & 0x08) == 0) {
+  }
 
-  DAC_Out(isSoundEnabled ? SineWave[waveIndex] : 0);
+  // Read result (12 bits).
+  result = ADC0->ADCSSFIFO3 & 0xFFF;
+
+  // Acknowledge completion.
+  ADC0->ADCISC = 0x0008;
+
+  return result;
 }
 
 int main(void){
-  // Enable 80Mhz clock.
-  PLLInitialize(4);
+  // Enable 50Mhz clock.
+  PLLInitialize(5);
 
-  // Activate GPIO ports B and E.
-  System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOB_MASK |
-                            System_CTRL_RCGCGPIO_GPIOE_MASK;
+  // Use 1ms gradation for 50 Mhz clock.
+  SysTickInitialize(50000UL);
 
-  GPIOE->AFSEL &= ~INPUT_PINS;
-  GPIOB->AFSEL &= ~OUTPUT_PINS;
+  const ADC_PIN = GPIO_PORT_PIN_3;
 
-  GPIOE->AMSEL &= ~INPUT_PINS;
-  GPIOB->AMSEL &= ~OUTPUT_PINS;
+  // Active ADC0.
+  System_CTRL_RCGCADC_R |= System_CTRL_RCGCADC_ADC0_MASK;
 
-  GPIOE->PCTL &= ~INPUT_PINS;
-  GPIOB->PCTL &= ~OUTPUT_PINS;
+  // Activate GPIO port E.
+  System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOE_MASK;
 
-  GPIOE->DIR &= ~INPUT_PINS;
-  GPIOB->DIR |= OUTPUT_PINS;
+  GPIOE->AFSEL |= ADC_PIN;
+  GPIOE->AMSEL |= ADC_PIN;
+  GPIOE->DIR &= ~ADC_PIN;
+  GPIOE->DEN &= ~ADC_PIN;
 
-  GPIOE->DEN |= INPUT_PINS;
-  GPIOB->DEN |= OUTPUT_PINS;
+  // Sequencer 3 is highest priority.
+  ADC0->ADCSSPRI = 0x0123;
 
-  GPIOE->IM |= INPUT_PINS;
+  // Disable sample sequencer 3.
+  ADC0->ADCACTSS &= ~0x0008;
 
-  // Generate interrupt on both touch and release!
-  GPIOE->IBE |= INPUT_PINS;
+  // Sequencer 3 is software trigger.
+  ADC0->ADCEMUX &= ~0xF000;
 
-  // Port E is Interrupt 20.
-  NVIC->PRI5 |= 0x20;
-  NVIC->EN0 |= 0x10;
+  // Clear SS3 field, saying that AIN0 will be used.
+  ADC0->ADCSSMUX3 &= ~0x000F;
+
+  // No TS0 D0, yes IE0 END0.
+  ADC0->ADCSSCTL3 = 0x0006;
+
+  // Enable sample sequencer 3.
+  ADC0->ADCACTSS |= 0x0008;
+
+  Nokia5110_Init();
+
+  Nokia5110_Clear();
 
   while(1) {
-  }
-}
-
-void GPIOPortE_Handler(void) {
-  GPIOE->ICR |= INPUT_PINS;
-  isSoundEnabled = ~isSoundEnabled;
-
-  if (isSoundEnabled) {
-    uint8_t data = GPIOE->DATA & 0x0F;
-
-    uint32_t note;
-    switch(data) {
-      case 1: note = C_0; break;
-      case 2: note = D; break;
-      case 4: note = E; break;
-      case 8: note = G; break;
-    }
-
-    SysTickInitializeWithCustomTicker(note, OnTick);
+    printf("Number %u \n", ReadADC0());
+    SysTickDelay(1000);
   }
 }

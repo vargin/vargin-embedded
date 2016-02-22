@@ -59,6 +59,18 @@
 #define System_CTRL_RCGCGPIO_R                    (*((volatile uint32_t *)System_CTRL_RCGCGPIO))
 /** ------------------------------------------------ **/
 
+/** Analog-to-Digital Converter Run Mode Clock Gating Control (RCGCADC) **/
+
+#define System_CTRL_RCGCADC                     (System_CTRL_BASE + 0x638UL)
+#define System_CTRL_RCGCADC_ADC0_MASK           (0x1UL)
+#define System_CTRL_RCGCADC_ADC1_MASK           (0x2UL)
+
+#define System_ADC0_BASE                        (0x40038000UL)
+#define System_ADC1_BASE                        (0x40039000UL)
+
+#define System_CTRL_RCGCADC_R                   (*((volatile uint32_t *)System_CTRL_RCGCADC))
+/** ------------------------------------------------ **/
+
 
 #define SSI0_BASE (0x40008000UL)
 #define SSI1_BASE (0x40009000UL)
