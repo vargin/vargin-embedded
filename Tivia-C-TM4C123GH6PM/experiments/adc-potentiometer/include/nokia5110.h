@@ -24,6 +24,15 @@ Nokia5110_Init(void);
 void
 Nokia5110_WriteOctet(uint8_t data);
 
+void
+Nokia5110_WriteChar(uint8_t data);
+
+void
+Nokia5110_WriteString(uint8_t *ptr);
+
+void
+Nokia5110_WriteDec(uint16_t n);
+
 // Move the cursor to the desired X- and Y-position.  The
 // next character will be printed here. X=0 is the leftmost
 // column. Y=0 is the top row.

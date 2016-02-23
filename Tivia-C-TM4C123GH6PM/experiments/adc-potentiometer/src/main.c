@@ -69,7 +69,8 @@ int main(void){
   Nokia5110_Clear();
 
   while(1) {
-    printf("Number %u \n", ReadADC0());
+    Nokia5110_Clear();
+    Nokia5110_WriteDec(ReadADC0());
     SysTickDelay(1000);
   }
 }
