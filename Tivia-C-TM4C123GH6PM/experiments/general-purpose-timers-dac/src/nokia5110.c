@@ -142,11 +142,11 @@ writeData(uint8_t data) {
 
 void
 Nokia5110_Init(void){
-  // Nokia 5110 LCD max clock frequency is 4Mhz, so with 50Mhz system clock,
+  // Nokia 5110 LCD max clock frequency is 4Mhz, so with 80Mhz system clock,
   // clock prescale divisor (must be even number) is calculated via
-  // SysClk/(CPSDVSR*(1+SCR)) formula, where SCR=0, so 50 / (14 * (1 + 0)) =
-  // 3.571 MHz (slower than 4 MHz).
-  InitializeSSI(SSI0Module, 14);
+  // SysClk/(CPSDVSR*(1+SCR)) formula, where SCR=0, so 80 / (20 * (1 + 0)) =
+  // 4 MHz.
+  InitializeSSI(SSI0Module, 20);
 
   // 6 - command chooser pin, 7 - reset pin.
   uint32_t servicePins = GPIO_PORT_PIN_6 | GPIO_PORT_PIN_7;

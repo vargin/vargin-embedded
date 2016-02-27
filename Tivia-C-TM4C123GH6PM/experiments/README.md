@@ -10,18 +10,24 @@
 * Perform the following commands:
     * Extract the samples and frequency from the ```WAV``` file:
     
-    ```[Spls, fs] = wavread('foo.wav');```
+        ```
+        [Spls, fs] = wavread('foo.wav');
+        ```
     
     * Downsample it, to get it to the frequency you want (11.025 kHz):
     
-    ```Spls = downsample(Spls, round(fs/11025));```
+        ```
+        Spls = downsample(Spls, round(fs/11025));
+        ```
     
     * Adjust the samples (originals are fractions between -1 and 1) to range between 0 and 15 (4-bit)
     
-    ```Spls = round((Spls+ 1)* 7.5);```
+        ```
+        Spls = round((Spls+ 1)* 7.5);
+        ```
       
     * Write result to a file:
-        ```mathlab
+        ```
         file = fopen('foo.txt', 'w');
             
         fprintf(file, 'uint8_t foo[] = {');

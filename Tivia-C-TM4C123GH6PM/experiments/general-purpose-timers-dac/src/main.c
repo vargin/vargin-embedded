@@ -6,15 +6,25 @@
 #include "../include/ports.h"
 #include "../include/adc.h"
 #include "../include/nokia5110.h"
+#include "../include/sounds.h"
 
-uint32_t ReadADC0(void) {
+const uint8_t SineWave[16] = { 4, 5, 6, 7, 7, 7, 6, 5, 4, 3, 2, 1, 1, 1, 2, 3 };
+uint8_t waveIndex = 0;
+
+void
+WriteDAC(uint8_t number) {
+  GPIOB->DATA = number;
+}
+
+uint32_t
+ReadADC0(void) {
   unsigned long result;
 
   // Initiate SS3.
   ADC0->ADCPSSI = 0x0008;
 
   // Wait for conversion done.
-  while((ADC0->ADCRIS & 0x08) == 0) {
+  while ((ADC0->ADCRIS & 0x08) == 0) {
   }
 
   // Read result (12 bits).
@@ -26,25 +36,33 @@ uint32_t ReadADC0(void) {
   return result;
 }
 
-int main(void){
-  // Enable 50Mhz clock.
-  PLLInitialize(5);
+int main(void) {
+  // Enable 80Mhz clock.
+  PLLInitialize(4);
 
-  // Use 1ms gradation for 50 Mhz clock.
-  SysTickInitialize(50000UL);
+  // Use 1ms gradation for 80 Mhz clock.
+  SysTickInitialize(80000UL);
 
   const ADC_PIN = GPIO_PORT_PIN_3;
+
+  const DAC_PINS = GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
 
   // Active ADC0.
   System_CTRL_RCGCADC_R |= System_CTRL_RCGCADC_ADC0_MASK;
 
-  // Activate GPIO port E.
-  System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOE_MASK;
+  // Activate GPIO port B (DAC) and E (ADC).
+  System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOB_MASK | System_CTRL_RCGCGPIO_GPIOE_MASK;
 
   GPIOE->AFSEL |= ADC_PIN;
   GPIOE->AMSEL |= ADC_PIN;
   GPIOE->DIR &= ~ADC_PIN;
   GPIOE->DEN &= ~ADC_PIN;
+
+  GPIOB->AFSEL &= ~DAC_PINS;
+  GPIOB->AMSEL &= ~DAC_PINS;
+  GPIOB->PCTL &= ~DAC_PINS;
+  GPIOB->DIR |= DAC_PINS;
+  GPIOB->DEN |= DAC_PINS;
 
   // Sequencer 3 is highest priority.
   ADC0->ADCSSPRI = 0x0123;
@@ -68,9 +86,13 @@ int main(void){
 
   Nokia5110_Clear();
 
-  while(1) {
+  while (1) {
     Nokia5110_Clear();
     Nokia5110_WriteDec(ReadADC0());
-    SysTickDelay(1000);
+    SysTickDelay(1);
+
+    waveIndex = (waveIndex + 1) & 0x0F;
+
+    WriteDAC(SineWave[waveIndex]);
   }
 }
