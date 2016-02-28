@@ -64,7 +64,8 @@ int main(void){
   // Generate interrupt on both touch and release!
   GPIOE->IBE |= INPUT_PINS;
 
-  // Port E is Interrupt 20.
+  // Port E is Interrupt 20. INCORRECT!!! Port E handler interrupt is 4 (see page 104), so we
+  // should use PRI1 here instead. NVIC->PRI1 |= 0x20000000;
   NVIC->PRI5 |= 0x20;
   NVIC->EN0 |= 0x10;
 
