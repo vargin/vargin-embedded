@@ -20,8 +20,37 @@ Default_Handler(void);
 // TODO: Rename this and add the actual routines here.
 
 void __attribute__ ((weak, alias ("Default_Handler")))
-DeviceInterrupt_Handler(void);
+    GPIOPortA_Handler(void);
 
+void __attribute__ ((weak, alias ("Default_Handler")))
+    GPIOPortB_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    GPIOPortC_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    GPIOPortD_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    GPIOPortE_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    Timer0A_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    Timer0B_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    Timer1A_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    Timer1B_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    Timer2A_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
+    Timer2B_Handler(void);
 // ----------------------------------------------------------------------------
 
 extern unsigned int _estack;
@@ -66,8 +95,51 @@ pHandler __isr_vectors[] =
 
         // ----------------------------------------------------------------------
         // DEVICE vectors
-        DeviceInterrupt_Handler,                  // Device specific
-    // TODO: rename and add more vectors here
+        GPIOPortA_Handler,
+        GPIOPortB_Handler,
+        GPIOPortC_Handler,
+        GPIOPortD_Handler,
+        GPIOPortE_Handler,
+        // 21 UART0
+        0,
+        // 22 UART1,
+        0,
+        // 23 SSI0,
+        0,
+        // 24 I 2 C0,
+        0,
+        // 25 PWM0 Fault,
+        0,
+        // 26 PWM0 Generator 0,
+        0,
+        // 27 PWM0 Generator 1,
+        0,
+        // 28 PWM0 Generator 2,
+        0,
+        // 29 QEI0,
+        0,
+        // 30 ADC0 Sequence 0
+        0,
+        // 31 ADC0 Sequence 1
+        0,
+        // 32 ADC0 Sequence 2
+        0,
+        // 33 ADC0 Sequence 3
+        0,
+        // 34 Watchdog Timers 0 and 1
+        0,
+        // 35 16/32-Bit Timer 0A,
+        Timer0A_Handler,
+        // 36 16/32-Bit Timer 0B,
+        Timer0B_Handler,
+        // 37 16/32-Bit Timer 1A
+        Timer1A_Handler,
+        // 38 16/32-Bit Timer 1B
+        Timer1B_Handler,
+        // 39 16/32-Bit Timer 2A
+        Timer2A_Handler,
+        // 40 16/32-Bit Timer 2B,
+        Timer2B_Handler
     };
 
 // ----------------------------------------------------------------------------
