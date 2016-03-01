@@ -106,7 +106,7 @@ pHandler __isr_vectors[] =
         0,
         // 23 SSI0,
         0,
-        // 24 I 2 C0,
+        // 24 I2C0,
         0,
         // 25 PWM0 Fault,
         0,
