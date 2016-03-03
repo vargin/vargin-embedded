@@ -9,7 +9,7 @@ typedef struct
   volatile uint32_t EN0;
 
   // Interrupt 32-63 Set Enable (EN1), offset 0x104
-  const uint32_t EN1;
+  volatile uint32_t EN1;
 
   // Interrupt 64-95 Set Enable (EN2), offset 0x108
   const uint32_t EN2;
@@ -94,16 +94,16 @@ typedef struct
   volatile uint32_t PRI0;
 
   // Interrupt 4-7 Priority (PRI1), offset 0x404
-  const uint32_t PRI1;
+  volatile uint32_t PRI1;
 
   // Interrupt 8-11 Priority (PRI2), offset 0x408
-  const uint32_t PRI2;
+  volatile uint32_t PRI2;
 
   // Interrupt 12-15 Priority (PRI3), offset 0x40C
-  const uint32_t PRI3;
+  volatile uint32_t PRI3;
 
   // Interrupt 16-19 Priority (PRI4), offset 0x410
-  const uint32_t PRI4;
+  volatile uint32_t PRI4;
 
   // Interrupt 20-23 Priority (PRI5), offset 0x414
   volatile uint32_t PRI5;

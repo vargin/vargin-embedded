@@ -3,8 +3,6 @@
 #include "../include/ports.h"
 #include "../include/nvic.h"
 
-#define NVIC_PRI0_R  (*((volatile uint32_t *)0xE000E400))
-
 int main(void){
   uint32_t inputPins = GPIO_PORT_PIN_0;
   uint32_t outputPins = GPIO_PORT_PIN_3;

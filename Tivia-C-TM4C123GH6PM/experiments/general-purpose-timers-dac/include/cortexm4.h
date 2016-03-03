@@ -71,6 +71,26 @@
 #define System_CTRL_RCGCADC_R                   (*((volatile uint32_t *)System_CTRL_RCGCADC))
 /** ------------------------------------------------ **/
 
+/** 16/32-Bit General-Purpose Timer Run Mode Clock Gating Control (RCGCTIMER) **/
+
+#define System_CTRL_RCGCTIMER                     (System_CTRL_BASE + 0x604UL)
+#define System_CTRL_RCGCTIMER_TIMER0_MASK         (0x1UL)
+#define System_CTRL_RCGCTIMER_TIMER1_MASK         (0x2UL)
+#define System_CTRL_RCGCTIMER_TIMER2_MASK         (0x4UL)
+#define System_CTRL_RCGCTIMER_TIMER3_MASK         (0x8UL)
+#define System_CTRL_RCGCTIMER_TIMER4_MASK         (0x10UL)
+#define System_CTRL_RCGCTIMER_TIMER5_MASK         (0x20UL)
+
+#define System_TIMER0_BASE                        (0x40030000UL)
+#define System_TIMER1_BASE                        (0x40031000UL)
+#define System_TIMER2_BASE                        (0x40032000UL)
+#define System_TIMER3_BASE                        (0x40033000UL)
+#define System_TIMER4_BASE                        (0x40034000UL)
+#define System_TIMER5_BASE                        (0x40035000UL)
+
+#define System_CTRL_RCGCTIMER_R                   (*((volatile uint32_t *)System_CTRL_RCGCTIMER))
+/** ------------------------------------------------ **/
+
 
 #define SSI0_BASE (0x40008000UL)
 #define SSI1_BASE (0x40009000UL)
