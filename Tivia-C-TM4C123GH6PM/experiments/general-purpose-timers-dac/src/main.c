@@ -10,12 +10,12 @@
 #include "../include/timers.h"
 #include "../include/nvic.h"
 
-uint8_t* tracks[9] = {one, two, three, four, five, six, seven, eight};
-uint32_t tracksLengths[9] = {4080, 4080, 3377, 2000, 982, 1042, 1054, 1098, 1802};
+uint8_t* tracks[8] = {one, two, three, four, five, six, seven, eight};
+uint32_t tracksLengths[8] = {4800, 4080, 3377, 2000, 982, 1042, 1054, 1098, 1802};
 uint8_t trackIndex = 0;
 
 uint8_t currentWaveIndex = 0;
-uint32_t currentCount = 4080;
+uint32_t currentCount = 4800;
 
 uint8_t armedViaADC = 0;
 
@@ -50,7 +50,7 @@ Timer0A_Handler(void) {
   Timer0->GPTMICR = 0x1UL;
 
   if (currentCount > 0) {
-    WriteDAC(tracks[trackIndex][currentWaveIndex] >> 4);
+    WriteDAC(tracks[trackIndex][currentWaveIndex]);
     currentWaveIndex = currentWaveIndex + 1;
     currentCount = currentCount - 1;
   } else if (armedViaADC == 0 && ReadADC0() > 3000UL) {
@@ -78,7 +78,9 @@ int main(void) {
 
   const ADC_PIN = GPIO_PORT_PIN_3;
 
-  const DAC_PINS = GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 | GPIO_PORT_PIN_3;
+  const DAC_PINS = GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1 | GPIO_PORT_PIN_2 |
+      GPIO_PORT_PIN_3 | GPIO_PORT_PIN_4 | GPIO_PORT_PIN_5 | GPIO_PORT_PIN_6 |
+      GPIO_PORT_PIN_7;
 
   // Active ADC0.
   System_CTRL_RCGCADC_R |= System_CTRL_RCGCADC_ADC0_MASK;
@@ -132,7 +134,7 @@ int main(void) {
   Timer0->GPTMTAMR = 0x2UL;
 
   // Reload value
-  Timer0->GPTMTAILR = 80000;
+  Timer0->GPTMTAILR = 7256;
 
   // Clock resolution
   Timer0->GPTMTAPR = 0;
