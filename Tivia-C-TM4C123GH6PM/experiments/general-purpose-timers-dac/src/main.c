@@ -10,12 +10,8 @@
 #include "../include/timers.h"
 #include "../include/nvic.h"
 
-uint8_t* tracks[8] = {one, two, three, four, five, six, seven, eight};
-uint32_t tracksLengths[8] = {4800, 4080, 3377, 2000, 982, 1042, 1054, 1098, 1802};
-uint8_t trackIndex = 0;
-
-uint8_t currentWaveIndex = 0;
-uint32_t currentCount = 4800;
+uint32_t currentWaveIndex = 0;
+uint32_t currentCount = 24320;
 
 uint8_t armedViaADC = 0;
 
@@ -50,21 +46,15 @@ Timer0A_Handler(void) {
   Timer0->GPTMICR = 0x1UL;
 
   if (currentCount > 0) {
-    WriteDAC(tracks[trackIndex][currentWaveIndex]);
+    WriteDAC(zero[currentWaveIndex]);
     currentWaveIndex = currentWaveIndex + 1;
     currentCount = currentCount - 1;
   } else if (armedViaADC == 0 && ReadADC0() > 3000UL) {
     armedViaADC = 1;
-
-    if (trackIndex < 8) {
-      trackIndex++;
-    } else {
-      trackIndex = 0;
-    }
-
     currentWaveIndex = 0;
-    currentCount = tracksLengths[trackIndex];
+    currentCount = 24320;
   } else if (armedViaADC == 1 && ReadADC0() < 3000UL) {
+    printf("Stopped \n");
     armedViaADC = 0;
   }
 }
