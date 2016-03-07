@@ -12,6 +12,8 @@
     
         ```
         [Spls, fs] = wavread('foo.wav');
+        // Alternatively, see http://de.mathworks.com/help/matlab/ref/audioread.html
+        [Spls, fs, nbits] = wavread('/home/azasypkin/Downloads/pacman.wav', 'native');
         ```
     
     * Downsample it, to get it to the frequency you want (11.025 kHz):

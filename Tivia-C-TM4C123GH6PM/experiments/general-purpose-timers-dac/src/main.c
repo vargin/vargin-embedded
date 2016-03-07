@@ -11,7 +11,7 @@
 #include "../include/nvic.h"
 
 uint32_t currentWaveIndex = 0;
-uint32_t currentCount = 24320;
+uint32_t currentCount = 4080;
 
 uint8_t armedViaADC = 0;
 
@@ -46,15 +46,14 @@ Timer0A_Handler(void) {
   Timer0->GPTMICR = 0x1UL;
 
   if (currentCount > 0) {
-    WriteDAC(zero[currentWaveIndex]);
+    WriteDAC(sound[currentWaveIndex]);
     currentWaveIndex = currentWaveIndex + 1;
     currentCount = currentCount - 1;
   } else if (armedViaADC == 0 && ReadADC0() > 3000UL) {
     armedViaADC = 1;
     currentWaveIndex = 0;
-    currentCount = 24320;
+    currentCount = 4080;
   } else if (armedViaADC == 1 && ReadADC0() < 3000UL) {
-    printf("Stopped \n");
     armedViaADC = 0;
   }
 }
