@@ -1,0 +1,9 @@
+#ifndef EXPERIMENTS_SIMPLELINK_H
+#define EXPERIMENTS_SIMPLELINK_H
+
+void
+SimpleLinkStart() {
+
+}
+
+#endif //EXPERIMENTS_SIMPLELINK_H
