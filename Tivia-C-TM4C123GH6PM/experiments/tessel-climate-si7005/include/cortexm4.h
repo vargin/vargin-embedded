@@ -49,6 +49,17 @@
 #define System_CTRL_RCGCSSI_R                   (*((volatile uint32_t *)System_CTRL_RCGCSSI))
 /** ------------------------------------------------ **/
 
+/** Inter-Integrated Circuit Run Mode Clock Gating Control (RCGCI2C) **/
+
+#define System_CTRL_RCGCI2C                     (System_CTRL_BASE + 0x620UL)
+#define System_CTRL_RCGCI2C_I2C0_MASK           (0x1UL)
+#define System_CTRL_RCGCI2C_I2C1_MASK           (0x2UL)
+#define System_CTRL_RCGCI2C_I2C2_MASK           (0x4UL)
+#define System_CTRL_RCGCI2C_I2C3_MASK           (0x8UL)
+
+#define System_CTRL_RCGCI2C_R                   (*((volatile uint32_t *)System_CTRL_RCGCI2C))
+/** ------------------------------------------------ **/
+
 /** General-Purpose Input/Output Run Mode Clock Gating Control (RCGCGPIO) **/
 
 #define System_CTRL_RCGCGPIO                      (System_CTRL_BASE + 0x608UL)
@@ -147,6 +158,11 @@
 #define SSI_SSICPSR_CPSDVSR_M          (0xFFUL)
 
 /** ------------------------------------------------ **/
+
+#define I2C0_BASE (0x40020000UL)
+#define I2C1_BASE (0x40021000UL)
+#define I2C2_BASE (0x40022000UL)
+#define I2C3_BASE (0x40023000UL)
 
 // XTAL configuration for 16MHz.
 #define System_CTRL_RCC_XTAL_ALL_MASK     (0x7C0UL)
