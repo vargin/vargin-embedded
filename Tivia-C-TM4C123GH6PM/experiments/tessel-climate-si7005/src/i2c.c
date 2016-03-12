@@ -12,7 +12,7 @@
  */
 
 I2CRegisters *
-InitializeI2C(I2CModules module, uint8_t systemClockMhz) {
+I2CInitialize(I2CModules module, uint8_t systemClockMhz) {
   if (module == I2C0Module) {
     uint32_t sclPin = GPIO_PORT_PIN_2;
     uint32_t sdaPin = GPIO_PORT_PIN_3;
@@ -50,5 +50,61 @@ InitializeI2C(I2CModules module, uint8_t systemClockMhz) {
     i2cModule->MTPR = (systemClockMhz / 2) - 1;
 
     return i2cModule;
+  } else {
+    return 0;
   }
+}
+
+void
+I2CSetSlaveAddress(I2CRegisters *i2cModule, uint8_t slaveAddress, I2CReadWrite readWrite) {
+  // Set the slave address to transmit data
+  i2cModule->MSA = (slaveAddress << 1) | readWrite;
+}
+
+uint8_t
+I2CMasterBusy(I2CRegisters *i2cModule) {
+  return i2cModule->MCS & I2C_MCS_BUSY;
+}
+
+I2COperationResult
+I2CSendByte(I2CRegisters *i2cModule, uint8_t data, uint8_t masterControlFlags) {
+  // Write the upper address to the data register
+  i2cModule->MDR = data;
+
+  // Start the transaction
+  i2cModule->MCS = masterControlFlags;
+
+  // Wait for the device to be free
+  while (I2CMasterBusy(i2cModule)) {};
+
+  // Check for error conditions
+  if (i2cModule->MCS & (I2C_MCS_ERROR | I2C_MCS_ARBLST)) {
+    return ARBLST_ERROR;
+  } else if (i2cModule->MCS & I2C_MCS_ERROR) {
+    i2cModule->MCS = I2C_MCS_STOP;
+    return BUS_ERROR;
+  } else if (i2cModule->MCS & I2C_MCS_DATACK) {
+    return NO_ACK_ERROR;
+  } else {
+    return OPERATION_OK;
+  }
+}
+
+I2COperationResult
+I2CReceiveByte(I2CRegisters *i2cModule, uint8_t *data, uint8_t masterControlFlags) {
+  // Start the transaction
+  i2cModule->MCS = masterControlFlags;
+
+  // Wait for the device to be free
+  while (I2CMasterBusy(i2cModule)) {};
+
+  // Check for error conditions
+  if (i2cModule->MCS & I2C_MCS_ERROR) {
+    i2cModule->MCS = I2C_MCS_STOP;
+    return BUS_ERROR;
+  }
+
+  *data = i2cModule->MDR;
+
+  return OPERATION_OK;
 }
