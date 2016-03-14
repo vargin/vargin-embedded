@@ -141,6 +141,111 @@ readTemperature(I2CRegisters *i2c) {
   return temperature;
 }
 
+/**
+ * The following steps should be performed in sequence to take a relative humidity measurement:
+ * 1. Set START (D0) in CONFIG to begin a new conversion;
+ * 2. Poll RDY (D0) in STATUS (register 0) until it is low (= 0);
+ * 3. Read the upper and lower bytes of the RH value from DATAh and DATAl
+ *    (registers 0x01 and 0x02), respectively.
+ * 4. Convert the RH value to %RH using the following equation: %RH = (RH/16) - 24 where RH is the
+ *    measured value returned in DATAh:DATAI
+ * 5. Apply temperature compensation and/or linearization as discussed in the data sheet.
+ */
+float
+readHumidity(I2CRegisters *i2c) {
+  turnOnSensor();
+
+  float humidity = -100.0;
+
+  // 1. Set config
+  I2CSetSlaveAddress(i2c, SENSOR_I2C_ADDRESS, Write);
+  I2COperationResult result = I2CSendByte(i2c, SENSOR_I2C_CONFIG, I2C_MCS_RUN | I2C_MCS_START);
+
+  if (result != OPERATION_OK) {
+    printf("Failed to write config register address %d", result);
+    return humidity;
+  }
+
+  result = I2CSendByte(
+      i2c, SENSOR_CONFIG_START | SENSOR_CONFIG_HUMIDITY, I2C_MCS_RUN | I2C_MCS_STOP
+  );
+
+  if (result != OPERATION_OK) {
+    printf("Failed to set config %d", result);
+    return humidity;
+  }
+
+  // 2. Poll STATUS.
+  result = I2CSendByte(i2c, SENSOR_I2C_STATUS, I2C_MCS_RUN | I2C_MCS_START);
+
+  if (result != OPERATION_OK) {
+    printf("Failed to write status register address %d", result);
+    return humidity;
+  }
+
+  I2CSetSlaveAddress(i2c, SENSOR_I2C_ADDRESS, Read);
+
+  uint8_t status = 0x1;
+  while(status & SENSOR_STATUS_NOT_READY) {
+    result = I2CReceiveByte(i2c, &status, I2C_MCS_START | I2C_MCS_RUN | I2C_MCS_STOP);
+
+    if (result != OPERATION_OK) {
+      printf("Failed to receive status %d", result);
+      return humidity;
+    }
+  }
+
+  I2CSetSlaveAddress(i2c, SENSOR_I2C_ADDRESS, Write);
+  result = I2CSendByte(i2c, SENSOR_I2C_DATA, I2C_MCS_RUN | I2C_MCS_START);
+
+  if (result != OPERATION_OK) {
+    printf("Failed to write data register address %d", result);
+    return humidity;
+  }
+
+  I2CSetSlaveAddress(i2c, SENSOR_I2C_ADDRESS, Read);
+
+  uint8_t dataHigh = 0;
+  result = I2CReceiveByte(
+      i2c, &dataHigh, I2C_MCS_START | I2C_MCS_RUN | I2C_MCS_ACK
+  );
+
+  if (result != OPERATION_OK) {
+    printf("Failed to receive temperature high bit %d", result);
+    return humidity;
+  }
+
+  uint8_t dataLow = 0;
+  result = I2CReceiveByte(i2c, &dataLow, I2C_MCS_RUN | I2C_MCS_STOP);
+
+  if (result != OPERATION_OK) {
+    printf("Failed to receive temperature low bit %d", result);
+    return humidity;
+  }
+
+  turnOffSensor();
+
+  uint16_t rawHumidity = ((dataHigh << 8) | dataLow) >> 4;
+  float humidityCurve = (rawHumidity / (float)HUMIDITY_SLOPE ) - HUMIDITY_OFFSET;
+
+  // Capacitive relative humidity sensors require linearization. The Si7005 accuracy specification
+  // applies after correction of non-linearity errors. The recommended linearization technique is
+  // to correct the measured relative humidity value with a 2nd order polynomial; the linear
+  // relative humidity (RH) value is calculated as follows:
+  float linearHumidity = humidityCurve -
+      ((humidityCurve * humidityCurve) * a2 + humidityCurve * a1 + a0);
+
+  // The Si7005 relative humidity sensor is calibrated at a temperature of 30 °C; it is at this
+  // temperature that the sensor will give the most accurate relative humidity readings. For
+  // relative humidity measurements at other temperatures, the RH reading from the Si7005 must be
+  // compensated for the change in temperature relative to 30 °C. Temperature compensated relative
+  // humidity readings can be calculated as follows:
+  float temperature = readTemperature(i2c);
+  humidity = linearHumidity + (temperature - 30) * (linearHumidity * q1 + q0);
+
+  return humidity;
+}
+
 uint8_t
 readSensorId(I2CRegisters *i2c) {
   turnOnSensor();
@@ -200,11 +305,17 @@ int main(void) {
 
   printf("Device ID is successfully retrieved %d", deviceId);
 
-  int8_t temperature = 0;
+  float temperature = 0.0;
+  float humidity = 0.0;
 
   while (1) {
     SysTickDelay(3000);
+
     temperature = readTemperature(i2c);
-    printf("Temperature is successfully retrieved %d", temperature);
+    humidity = readHumidity(i2c);
+
+    printf(
+      "Temperature (%.3f) and humidity (%.3f) are successfully retrieved", temperature, humidity
+    );
   }
 }
