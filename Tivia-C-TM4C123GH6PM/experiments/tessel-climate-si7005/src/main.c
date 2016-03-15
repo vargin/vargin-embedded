@@ -6,6 +6,7 @@
 #include "systick.h"
 #include "ports.h"
 #include "i2c.h"
+#include "nokia5110.h"
 
 #define SENSOR_ID_SAMPLE   (0xF0)
 #define SENSOR_ID          (0x50)
@@ -277,6 +278,65 @@ readSensorId(I2CRegisters *i2c) {
   return deviceId;
 }
 
+char* f2s(float f, int precision){
+  char str[30];
+
+  int a,b,c,k,l=0,m,i=0,j;
+
+  // Check for negative float.
+  if(f < 0.0) {
+    str[i++]='-';
+    f *= -1;
+  }
+
+  // extracting whole number.
+  a = f;
+
+  // extracting decimal part.
+  f -= a;
+  k = precision;
+
+  // number of digits in whole number
+  while(k > -1) {
+    l = pow(10,k);
+    m = a/l;
+    if(m>0) {
+      break;
+    }
+    k--;
+  }
+
+  // number of digits in whole number are k+1
+
+  /*
+  extracting most significant digit i.e. right most digit , and concatenating to string
+  obtained as quotient by dividing number by 10^k where k = (number of digit -1)
+  */
+
+  for(l=k+1;l>0;l--)
+  {
+    b = pow(10,l-1);
+    c = a/b;
+    str[i++]=c+48;
+    a%=b;
+  }
+  str[i++] = '.';
+
+  /* extracting decimal digits till precision */
+
+  for(l=0;l<precision;l++)
+  {
+    f*=10.0;
+    b = f;
+    str[i++]=b+48;
+    f-=b;
+  }
+
+  str[i]='\0';
+
+  return str;
+}
+
 int main(void) {
   // Enable 80Mhz clock.
   PLLInitialize(4);
@@ -308,14 +368,22 @@ int main(void) {
   float temperature = 0.0;
   float humidity = 0.0;
 
+  Nokia5110_Init();
+  Nokia5110_Clear();
+
   while (1) {
     SysTickDelay(3000);
 
     temperature = readTemperature(i2c);
     humidity = readHumidity(i2c);
 
-    printf(
-      "Temperature (%.3f) and humidity (%.3f) are successfully retrieved", temperature, humidity
+    char message[20];
+
+    sprintf(
+      message, "T is (%d) and H is (%d)", (int)temperature, (int)humidity
     );
+
+    Nokia5110_Clear();
+    Nokia5110_WriteString(message);
   }
 }
