@@ -6,3 +6,4 @@ CMakeLists.txt
 Debug
 Packages
 RemoteSystemsTempFiles
+node_modules
