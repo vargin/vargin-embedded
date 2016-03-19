@@ -45,4 +45,6 @@ InitializeSSI(SSIModules module, uint8_t clockPrescaleDivisor) {
 
     return SSI0;
   }
+
+  return 0;
 }

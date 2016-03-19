@@ -34,9 +34,25 @@
 #define System_CTRL_RCGC2_GPIOC_MASK      (0x4UL)
 #define System_CTRL_RCGC2_GPIOD_MASK      (0x8UL)
 
-#define System_CTRL_RCGC2_R                   (*((volatile uint32_t *)System_CTRL_RCGC2))
+#define System_CTRL_RCGC2_R               (*((volatile uint32_t *)System_CTRL_RCGC2))
 
 /** ------------------------------------------------ **/
+
+/** Universal Asynchronous Receiver/Transmitter Run Mode Clock Gating Control (RCGCUART) **/
+
+#define System_CTRL_RCGCUART                     (System_CTRL_BASE + 0x618UL)
+#define System_CTRL_RCGCSSI_UART0_MASK           (0x1UL)
+#define System_CTRL_RCGCSSI_UART1_MASK           (0x2UL)
+#define System_CTRL_RCGCSSI_UART2_MASK           (0x4UL)
+#define System_CTRL_RCGCSSI_UART3_MASK           (0x8UL)
+#define System_CTRL_RCGCSSI_UART4_MASK           (0x10UL)
+#define System_CTRL_RCGCSSI_UART5_MASK           (0x20UL)
+#define System_CTRL_RCGCSSI_UART6_MASK           (0x40UL)
+#define System_CTRL_RCGCSSI_UART7_MASK           (0x80UL)
+
+#define System_CTRL_RCGCUART_R                   (*((volatile uint32_t *)System_CTRL_RCGCUART))
+/** ------------------------------------------------ **/
+
 
 /** Synchronous Serial Interface Run Mode Clock Gating Control (RCGCSSI) **/
 
@@ -253,69 +269,6 @@
 #define UART5_BASE (0x40011000)
 #define UART6_BASE (0x40012000)
 #define UART7_BASE (0x40013000)
-
-#define UART0_UARTFR (UART0_BASE + 0x018UL)
-#define UART1_UARTFR (UART1_BASE + 0x018UL)
-#define UART2_UARTFR (UART2_BASE + 0x018UL)
-#define UART3_UARTFR (UART3_BASE + 0x018UL)
-#define UART4_UARTFR (UART4_BASE + 0x018UL)
-#define UART5_UARTFR (UART5_BASE + 0x018UL)
-#define UART6_UARTFR (UART6_BASE + 0x018UL)
-#define UART7_UARTFR (UART7_BASE + 0x018UL)
-
-#define UART0_UARTIBRD (UART0_BASE + 0x024UL)
-#define UART1_UARTIBRD (UART1_BASE + 0x024UL)
-#define UART2_UARTIBRD (UART2_BASE + 0x024UL)
-#define UART3_UARTIBRD (UART3_BASE + 0x024UL)
-#define UART4_UARTIBRD (UART4_BASE + 0x024UL)
-#define UART5_UARTIBRD (UART5_BASE + 0x024UL)
-#define UART6_UARTIBRD (UART6_BASE + 0x024UL)
-#define UART7_UARTIBRD (UART7_BASE + 0x024UL)
-
-#define UART0_UARTFBRD (UART0_BASE + 0x028UL)
-#define UART1_UARTFBRD (UART1_BASE + 0x028UL)
-#define UART2_UARTFBRD (UART2_BASE + 0x028UL)
-#define UART3_UARTFBRD (UART3_BASE + 0x028UL)
-#define UART4_UARTFBRD (UART4_BASE + 0x028UL)
-#define UART5_UARTFBRD (UART5_BASE + 0x028UL)
-#define UART6_UARTFBRD (UART6_BASE + 0x028UL)
-#define UART7_UARTFBRD (UART7_BASE + 0x028UL)
-
-#define UART0_UARTLCRH (UART0_BASE + 0x02CUL)
-#define UART1_UARTLCRH (UART1_BASE + 0x02CUL)
-#define UART2_UARTLCRH (UART2_BASE + 0x02CUL)
-#define UART3_UARTLCRH (UART3_BASE + 0x02CUL)
-#define UART4_UARTLCRH (UART4_BASE + 0x02CUL)
-#define UART5_UARTLCRH (UART5_BASE + 0x02CUL)
-#define UART6_UARTLCRH (UART6_BASE + 0x02CUL)
-#define UART7_UARTLCRH (UART7_BASE + 0x02CUL)
-
-#define UART0_UARTCTL (UART0_BASE + 0x030UL)
-#define UART1_UARTCTL (UART1_BASE + 0x030UL)
-#define UART2_UARTCTL (UART2_BASE + 0x030UL)
-#define UART3_UARTCTL (UART3_BASE + 0x030UL)
-#define UART4_UARTCTL (UART4_BASE + 0x030UL)
-#define UART5_UARTCTL (UART5_BASE + 0x030UL)
-#define UART6_UARTCTL (UART6_BASE + 0x030UL)
-#define UART7_UARTCTL (UART7_BASE + 0x030UL)
-
-#define UART0_UARTRIS (UART0_BASE + 0x03CUL)
-#define UART1_UARTRIS (UART1_BASE + 0x03CUL)
-#define UART2_UARTRIS (UART2_BASE + 0x03CUL)
-#define UART3_UARTRIS (UART3_BASE + 0x03CUL)
-#define UART4_UARTRIS (UART4_BASE + 0x03CUL)
-#define UART5_UARTRIS (UART5_BASE + 0x03CUL)
-#define UART6_UARTRIS (UART6_BASE + 0x03CUL)
-#define UART7_UARTRIS (UART7_BASE + 0x03CUL)
-
-#define UART0_UARTCC (UART0_BASE + 0xFC8UL)
-#define UART1_UARTCC (UART1_BASE + 0xFC8UL)
-#define UART2_UARTCC (UART2_BASE + 0xFC8UL)
-#define UART3_UARTCC (UART3_BASE + 0xFC8UL)
-#define UART4_UARTCC (UART4_BASE + 0xFC8UL)
-#define UART5_UARTCC (UART5_BASE + 0xFC8UL)
-#define UART6_UARTCC (UART6_BASE + 0xFC8UL)
-#define UART7_UARTCC (UART7_BASE + 0xFC8UL)
 
 #define UART2_UARTFR_RXFE_MASK     (0x10UL)
 
