@@ -79,6 +79,6 @@ typedef struct
 #define UART3  ((UARTRegisters *) UART3_BASE)
 
 extern UARTRegisters*
-UARTInitialize(UARTModules module, uint8_t systemClockMhz);
+UARTInitialize(UARTModules module, uint32_t baudRate, uint8_t systemClockMhz);
 
 #endif //INCLUDE_UART_H

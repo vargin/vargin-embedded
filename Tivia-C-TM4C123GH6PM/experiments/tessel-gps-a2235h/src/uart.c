@@ -4,7 +4,7 @@
 #include "uart.h"
 
 UARTRegisters*
-UARTInitialize(UARTModules module, uint8_t systemClockMhz) {
+UARTInitialize(UARTModules module, uint32_t baudRate, uint8_t systemClockMhz) {
   UARTRegisters *uart;
   GPIORegisters *gpio;
 
@@ -19,6 +19,14 @@ UARTInitialize(UARTModules module, uint8_t systemClockMhz) {
 
     uartClockMask = System_CTRL_RCGCSSI_UART0_MASK;
     gpioClockMask = System_CTRL_RCGCGPIO_GPIOA_MASK;
+
+    pins = GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1;
+  } else if (module == UART1Module) {
+    uart = UART1;
+    gpio = GPIOB;
+
+    uartClockMask = System_CTRL_RCGCSSI_UART1_MASK;
+    gpioClockMask = System_CTRL_RCGCGPIO_GPIOB_MASK;
 
     pins = GPIO_PORT_PIN_0 | GPIO_PORT_PIN_1;
   } else if (module == UART2Module) {
@@ -44,7 +52,7 @@ UARTInitialize(UARTModules module, uint8_t systemClockMhz) {
 
   // IBRD = int(80,000,000/(16*9600)) = int(520.833333333).
   // 80.000.000 / (16 * 9.600) = 80 / 0.1536
-  float baudRateDivisor = systemClockMhz / 0.1536;
+  float baudRateDivisor = systemClockMhz / (16 * (baudRate / 1000000.0));
 
   uint32_t integerBaudRateDivisor = (uint32_t)baudRateDivisor;
   float fractionalBaudRateDivisor = baudRateDivisor - integerBaudRateDivisor;
@@ -63,7 +71,7 @@ UARTInitialize(UARTModules module, uint8_t systemClockMhz) {
 
   // Configure GPIO
 
-  if (module == UART0Module) {
+  if (module == UART0Module || module == UART1Module) {
     // Choose UART alternative function (0x1) for pins 0 and 1.
     gpio->PCTL = (gpio->PCTL & 0xFFFFFF00) + 0x00000011;
   } else if (module == UART2Module) {
