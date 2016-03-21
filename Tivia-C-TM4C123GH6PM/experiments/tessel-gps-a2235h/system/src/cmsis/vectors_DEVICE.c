@@ -35,6 +35,9 @@ void __attribute__ ((weak, alias ("Default_Handler")))
     GPIOPortE_Handler(void);
 
 void __attribute__ ((weak, alias ("Default_Handler")))
+    UART1_Handler(void);
+
+void __attribute__ ((weak, alias ("Default_Handler")))
     Timer0A_Handler(void);
 
 void __attribute__ ((weak, alias ("Default_Handler")))
@@ -105,7 +108,7 @@ pHandler __isr_vectors[] =
         // 21 UART0
         0,
         // 22 UART1,
-        0,
+        UART1_Handler,
         // 23 SSI0,
         0,
         // 24 I2C0,

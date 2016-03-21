@@ -37,19 +37,19 @@ typedef struct
   volatile uint32_t CTL;
 
   // UART Interrupt FIFO Level Select (UARTIFLS), offset 0x034
-  const uint32_t IFLS;
+  volatile uint32_t IFLS;
 
   // UART Interrupt Mask (UARTIM), offset 0x038
-  const uint32_t TIM;
+  volatile uint32_t IM;
 
   // UART Raw Interrupt Status (UARTRIS), offset 0x03C
   volatile uint32_t RIS;
 
   // UART Masked Interrupt Status (UARTMIS), offset 0x040
-  const uint32_t MIS;
+  volatile uint32_t MIS;
 
   // UART Interrupt Clear (UARTICR), offset 0x044
-  const uint32_t ICR;
+  volatile uint32_t ICR;
 
   // UART DMA Control (UARTDMACTL), offset 0x048
   const uint32_t DMACTL;
