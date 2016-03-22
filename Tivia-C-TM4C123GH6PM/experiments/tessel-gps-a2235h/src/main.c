@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cortexm4.h"
 #include "pll.h"
@@ -13,12 +14,37 @@ GPIORegisters *chipSelectPort = GPIOB;
 UARTRegisters *uart = UART1;
 uint8_t chipSelectPin = GPIO_PORT_PIN_2;
 
+typedef struct {
+  uint8_t *array;
+  size_t used;
+  size_t size;
+} Array;
+
+void initArray(Array *a, size_t initialSize) {
+  a->array = (uint8_t *)malloc(initialSize * sizeof(uint8_t));
+  a->used = 0;
+  a->size = initialSize;
+}
+
+void insertArray(Array *a, uint8_t element) {
+  if (a->used == a->size) {
+    a->size *= 2;
+    a->array = (uint8_t *)realloc(a->array, a->size * sizeof(uint8_t));
+  }
+  a->array[a->used++] = element;
+}
+
+void freeArray(Array *a) {
+  free(a->array);
+  a->array = NULL;
+  a->used = a->size = 0;
+}
+
 void
 toggleSensor() {
   chipSelectPort->PIN2 = 0x1;
-  SysTickDelay(250);
+  SysTickDelay(200);
   chipSelectPort->PIN2 = 0x0;
-  SysTickDelay(500);
 }
 
 uint8_t
@@ -33,22 +59,21 @@ sendByte(UARTRegisters *uart, uint8_t data) {
   uart->DR = data;
 }
 
+Array uartData;
+
 void
 UART1_Handler(void) {
   // Acknowledge that interrupt is processed.
   uart->ICR |= 0xFFFFUL;
 
   while((uart->FR & (1 << 4)) == 0) {
-    uint8_t data = (uint8_t)uart->DR;
-    printf("Data %c", data);
+    insertArray(&uartData, (uint8_t)uart->DR);
   }
-
-/*  if (uart->MIS & 0x10UL) {
-
-  }*/
 }
 
 int main(void) {
+  initArray(&uartData, 5);
+
   // Enable 80Mhz clock.
   PLLInitialize(4);
 
@@ -56,6 +81,17 @@ int main(void) {
   SysTickInitialize(80000UL);
 
   UARTInitialize(UART1Module, 115200, 80);
+
+  // Enable interrupt for 4th bit - RXIM.
+  uart->IM |= 0x10UL;
+  // uart->IFLS &= ~0x38UL;
+
+  // UART1 is 22nd in vector table, interrupt number is 6.
+  // Setting priority 2 (0100, 3 bits).
+  NVIC->PRI1 = (NVIC->PRI1 & 0xFF00FFFF) | 0x00400000;
+
+  // Enable IRQ 6
+  NVIC->EN0 = 1 << 6;
 
   // Activate GPIO port B (Chip Select).
   System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOB_MASK;
@@ -70,21 +106,31 @@ int main(void) {
   Nokia5110_Clear();
   Nokia5110_WriteString("GPS");
 
+  SysTickDelay(1000);
+
   toggleSensor();
 
-  UARTInitialize(UART1Module, 115200, 80);
-
-  // Enable interrupt for 4th bit - RXIM.
-  uart->IM |= 0x10UL;
-  //uart->IFLS &= ~0x38UL;
-
-  // UART1 is 22nd in vector table, interrupt number is 6.
-  // Setting priority 4 (100, 3 bits).
-  NVIC->PRI1 = (NVIC->PRI1 & 0xFF00FFFF) | 0x00800000;
-
-  // Enable IRQ 6
-  NVIC->EN0 = 1 << 6;
-
   while (1) {
+    if (uartData.used == 0) {
+      Nokia5110_Clear();
+      Nokia5110_WriteString("No data!");
+      SysTickDelay(1000);
+    } else {
+      char symbol[4];
+      for (uint32_t i = 0; i < uartData.used; i++) {
+        if (i % 17 == 0) {
+          SysTickDelay(5000);
+          Nokia5110_Clear();
+        }
+
+        sprintf(symbol, "_%02x_", uartData.array[i]);
+
+        Nokia5110_WriteString(symbol);
+      }
+
+      SysTickDelay(5000);
+      Nokia5110_Clear();
+      Nokia5110_WriteString("End of data!");
+    }
   }
 }

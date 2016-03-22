@@ -60,8 +60,8 @@ UARTInitialize(UARTModules module, uint32_t baudRate, uint8_t systemClockMhz) {
   // IBRD = int(80,000,000/(16*9600)) = int(520.833333333).
   uart->IBRD = integerBaudRateDivisor;
 
-  // FBRD = round(0.833333333 * 64 + 0.5) = 53.
-  uart->FBRD = (uint32_t)(fractionalBaudRateDivisor * 64 + 0.5);
+  // FBRD = round(0.833333333 * 64) = 53.
+  uart->FBRD = (uint32_t)(fractionalBaudRateDivisor * 64);
 
   // 8 bit, no parity bits, one stop, FIFOs.
   uart->LCRH = 0x00000070;
