@@ -1,3 +1,15 @@
+# Embedded Systems Introduction
+
+<http://users.ece.utexas.edu/~valvano/Volume1/E-Book/>
+
+<http://users.ece.utexas.edu/%7Evalvano/arm/#SerialInterfaces>
+
+<http://ece353.engr.wisc.edu/ece353-the-book/embedded-system-overview/>
+
+# Qucs Simulation
+
+<https://github.com/Qucs/qucs/wiki/Time-Domain-Simulation>
+
 # Tricks
 
 ## Converting ```*.wav``` to ```uint8_t``` array with Octave:
