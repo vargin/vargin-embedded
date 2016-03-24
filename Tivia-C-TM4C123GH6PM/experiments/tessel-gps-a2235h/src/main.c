@@ -4,7 +4,6 @@
 
 #include "cortexm4.h"
 #include "pll.h"
-#include "nvic.h"
 #include "systick.h"
 #include "ports.h"
 #include "uart.h"
@@ -64,7 +63,7 @@ Array uartData;
 void
 UART1_Handler(void) {
   // Acknowledge that interrupt is processed.
-  uart->ICR |= 0xFFFFUL;
+  uart->ICR |= 0x50UL;
 
   while((uart->FR & (1 << 4)) == 0) {
     insertArray(&uartData, (uint8_t)uart->DR);
@@ -82,17 +81,6 @@ int main(void) {
 
   UARTInitialize(UART1Module, 115200, 80);
 
-  // Enable interrupt for 4th bit - RXIM.
-  uart->IM |= 0x10UL;
-  // uart->IFLS &= ~0x38UL;
-
-  // UART1 is 22nd in vector table, interrupt number is 6.
-  // Setting priority 2 (0100, 3 bits).
-  NVIC->PRI1 = (NVIC->PRI1 & 0xFF00FFFF) | 0x00400000;
-
-  // Enable IRQ 6
-  NVIC->EN0 = 1 << 6;
-
   // Activate GPIO port B (Chip Select).
   System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOB_MASK;
 
@@ -106,15 +94,12 @@ int main(void) {
   Nokia5110_Clear();
   Nokia5110_WriteString("GPS");
 
-  SysTickDelay(1000);
-
   toggleSensor();
 
   while (1) {
     if (uartData.used == 0) {
       Nokia5110_Clear();
       Nokia5110_WriteString("No data!");
-      SysTickDelay(1000);
     } else {
       char symbol[4];
       for (uint32_t i = 0; i < uartData.used; i++) {

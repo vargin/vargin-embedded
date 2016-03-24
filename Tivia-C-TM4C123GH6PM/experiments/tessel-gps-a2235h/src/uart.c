@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "cortexm4.h"
 #include "ports.h"
+#include "nvic.h"
 #include "uart.h"
 
 UARTRegisters*
@@ -66,12 +67,21 @@ UARTInitialize(UARTModules module, uint32_t baudRate, uint8_t systemClockMhz) {
   // 8 bit, no parity bits, one stop, FIFOs.
   uart->LCRH = 0x00000070;
 
-  // Enable UART.
-  uart->CTL |= 0x1UL;
-
   // Configure GPIO
+  if (module == UART0Module) {
+    // Choose UART alternative function (0x1) for pins 0 and 1.
+    gpio->PCTL = (gpio->PCTL & 0xFFFFFF00) + 0x00000011;
+  } else if (module == UART1Module) {
+    // Only UART1 now enabled with interruptions
+    // Enable interrupt for 4th bit - RXIM and 6th bit - RTIM.
+    uart->IM |= 0x50UL;
+    // UART1 is 22nd in vector table, interrupt number is 6.
+    // Setting priority 2 (0100, 3 bits).
+    NVIC->PRI1 = (NVIC->PRI1 & 0xFF00FFFF) | 0x00400000;
 
-  if (module == UART0Module || module == UART1Module) {
+    // Enable IRQ 6
+    NVIC->EN0 = 1 << 6;
+
     // Choose UART alternative function (0x1) for pins 0 and 1.
     gpio->PCTL = (gpio->PCTL & 0xFFFFFF00) + 0x00000011;
   } else if (module == UART2Module) {
@@ -91,6 +101,9 @@ UARTInitialize(UARTModules module, uint32_t baudRate, uint8_t systemClockMhz) {
 
   // Enable digital I/O on all required pins.
   gpio->DEN |= pins;
+
+  // Enable UART.
+  uart->CTL |= 0x1UL;
 
   return uart;
 }
