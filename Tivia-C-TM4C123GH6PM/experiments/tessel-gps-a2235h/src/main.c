@@ -96,6 +96,10 @@ int main(void) {
 
   toggleSensor();
 
+  // On the current hardware we receive to messages:
+  // 1. A0A20001470047B0B3 - SiRF IV: Hardware Configuration Request, MID_HW_CONFIG_REQ, unused.
+  // 2. A0A2000212000012B0B3 - OkToSend SiRF binary message.
+
   while (1) {
     if (uartData.used == 0) {
       Nokia5110_Clear();
