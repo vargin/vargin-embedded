@@ -63,7 +63,7 @@ typedef struct
   volatile uint32_t IBE;
 
   // Offset: 0x40C Interrupt Event Register.
-  const uint32_t IE;
+  volatile uint32_t IEV;
 
   // Offset: 0x410 GPIO Interrupt Mask Register.
   volatile uint32_t IM;
