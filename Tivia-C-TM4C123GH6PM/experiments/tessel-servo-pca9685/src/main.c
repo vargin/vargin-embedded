@@ -22,14 +22,88 @@
 #define SLAVE_I2C_ADDRESS (0x73)
 #define MODE1_ADDRESS 0x0
 #define PRESCALE_ADDRESS 0xFE
+#define LED0_ON_L_ADDRESS 0x06
+#define LED0_ON_H_ADDRESS 0x07
+#define LED0_OFF_L_ADDRESS 0x08
+#define LED0_OFF_H_ADDRESS 0x09
 
+#define SERVO_INDEX 1
 #define MAX_FREQUENCY 4096
+#define LOW_PWM 0.05
+#define HIGH_PWM 0.12
 
 GPIORegisters *servicePort = GPIOA;
 const uint8_t address2Pin = GPIO_PORT_PIN_2;
 const uint8_t address3Pin = GPIO_PORT_PIN_3;
 const uint8_t servoSwitchPin = GPIO_PORT_PIN_4;
 const uint8_t switchPin = GPIO_PORT_PIN_5;
+
+I2CRegisters *i2c = I2C0;
+float position = 0.0;
+
+uint8_t
+getMode(I2CRegisters *i2c) {
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
+
+  I2COperationResult result = I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_RUN | I2C_MCS_START);
+  if (result != OPERATION_OK) {
+    printf("Failed to write mode1 register address %d", result);
+    return 0;
+  }
+
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Read);
+
+  uint8_t mode = 0x0;
+
+  result = I2CReceiveByte(i2c, &mode, I2C_MCS_START | I2C_MCS_RUN | I2C_MCS_STOP);
+  if (result != OPERATION_OK) {
+    printf("Failed to receive mode %d", result);
+    return 0;
+  }
+
+  return mode;
+}
+
+void
+setMode(I2CRegisters *i2c, uint8_t mode) {
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
+
+  I2COperationResult result = I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_RUN | I2C_MCS_START);
+  if (result != OPERATION_OK) {
+    printf("Failed to write mode1 register address %d", result);
+    return;
+  }
+
+  result = I2CSendByte(i2c, mode, I2C_MCS_RUN | I2C_MCS_STOP);
+  if (result != OPERATION_OK) {
+    printf("Failed to set mode %d", result);
+    return;
+  }
+
+  SysTickDelay(500);
+}
+
+void
+setPrescale(I2CRegisters *i2c, uint16_t frequencyHz) {
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
+
+  float prescaleValue = ((80000000 / MAX_FREQUENCY) / frequencyHz) - 1;
+  uint8_t prescale = floor(prescaleValue);
+
+  I2COperationResult result = I2CSendByte(i2c, PRESCALE_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  if (result != OPERATION_OK) {
+    printf("Failed to write prescale register address %d", result);
+    return;
+  }
+
+  result = I2CSendByte(i2c, prescale, I2C_MCS_RUN | I2C_MCS_STOP);
+  if (result != OPERATION_OK) {
+    printf("Failed to write prescale register data %d", result);
+    return;
+  }
+
+  SysTickDelay(500);
+}
 
 /**
  * Sets the PWM frequency in Hz for the PCA9685 chip.
@@ -41,29 +115,91 @@ const uint8_t switchPin = GPIO_PORT_PIN_5;
  */
 void
 setModuleFrequency(I2CRegisters *i2c, uint16_t frequencyHz) {
-  float prescaleValue = ((25000000 / MAX_FREQUENCY) / frequencyHz) - 1;
-  uint32_t prescale = floor(prescaleValue);
+  uint8_t mode = getMode(i2c);
 
-  // 1. Set config
-  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
-  I2COperationResult result = I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_RUN | I2C_MCS_START);
+  // Writes to PRE_SCALE register are blocked when SLEEP bit is logic 0 (MODE 1).
+  // So we're setting SLEEP bit to set prescale.
+  setMode(i2c, mode | 0x10);
 
-  if (result != OPERATION_OK) {
-    printf("Failed to write mode1 register address %d", result);
-    return;
-  }
+  mode = getMode(i2c);
 
-  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Read);
+  setPrescale(i2c, frequencyHz);
 
-  uint8_t mode = 0x0;
-  result = I2CReceiveByte(i2c, &mode, I2C_MCS_START | I2C_MCS_RUN | I2C_MCS_STOP);
+  setMode(i2c, 0xa1);
 
-  if (result != OPERATION_OK) {
-    printf("Failed to receive mode %d", result);
-    return;
-  }
+  mode = getMode(i2c);
 
   printf("Mode has been read successfully: %02x", mode);
+}
+
+void
+setDutyCycle(I2CRegisters *i2c, float cycle) {
+  uint16_t convertOn = 0;
+  uint16_t convertOff = floor(MAX_FREQUENCY * cycle);
+
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
+
+  I2COperationResult result = I2CSendByte(
+      i2c,
+      LED0_ON_L_ADDRESS + (SERVO_INDEX - 1) * 4,
+      I2C_MCS_RUN | I2C_MCS_START
+  );
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_ON_L register address %d", result);
+    return;
+  }
+
+  result = I2CSendByte(i2c, convertOn, I2C_MCS_RUN | I2C_MCS_STOP);
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_ON_L register data %d", result);
+    return;
+  }
+
+  SysTickDelay(100);
+
+  result = I2CSendByte(i2c, LED0_ON_H_ADDRESS + (SERVO_INDEX - 1) * 4, I2C_MCS_START | I2C_MCS_RUN);
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_ON_H register address %d", result);
+    return;
+  }
+
+  result = I2CSendByte(i2c, convertOn >> 8, I2C_MCS_RUN | I2C_MCS_STOP);
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_ON_H register data %d", result);
+    return;
+  }
+
+  SysTickDelay(100);
+
+  result = I2CSendByte(i2c, LED0_OFF_L_ADDRESS + (SERVO_INDEX - 1) * 4, I2C_MCS_START | I2C_MCS_RUN);
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_OFF_L register address %d", result);
+    return;
+  }
+
+  result = I2CSendByte(i2c, convertOff, I2C_MCS_RUN | I2C_MCS_STOP);
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_OFF_L register data %d", result);
+    return;
+  }
+
+  SysTickDelay(100);
+
+  result = I2CSendByte(i2c, LED0_OFF_H_ADDRESS + (SERVO_INDEX - 1) * 4, I2C_MCS_START | I2C_MCS_RUN);
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_OFF_H register address %d", result);
+    return;
+  }
+
+  result = I2CSendByte(i2c, convertOff >> 8, I2C_MCS_RUN | I2C_MCS_STOP);
+  if (result != OPERATION_OK) {
+    printf("Failed to write LED0_OFF_H register data %d", result);
+    return;
+  }
+}
+
+void move(I2CRegisters *i2c, float position) {
+  setDutyCycle(i2c, (position * (HIGH_PWM - LOW_PWM)) + LOW_PWM);
 }
 
 int main(void) {
@@ -99,16 +235,19 @@ int main(void) {
   // Enable IRQ 0
   NVIC->EN0 = 1 << 0;
 
+  // I2C0, 80Mhz system clock.
+  I2CInitialize(I2C0Module, 80);
+
   // Turn on servo
-  servicePort->DATA &= ~servoSwitchPin;
+  // servicePort->DATA &= ~servoSwitchPin;
+  servicePort->PIN4 = 0x0;
 
   // Make address 2 and address 3 pins low
-  servicePort->DATA &= ~(address2Pin | address3Pin);
+  // servicePort->DATA &= ~(address2Pin | address3Pin);
+  servicePort->PIN2 = 0x0;
+  servicePort->PIN3 = 0x0;
 
-  // I2C0, 80Mhz system clock.
-  I2CRegisters *i2c = I2CInitialize(I2C0Module, 80);
-
-  setModuleFrequency(i2c, 50);
+  setModuleFrequency(i2c, 100);
 
   while (1) {
   }
@@ -116,4 +255,12 @@ int main(void) {
 
 void GPIOPortA_Handler(void) {
   servicePort->ICR |= switchPin;
+
+  move(i2c, position);
+
+  position += 0.1;
+  if (position > 1) {
+    // Reset servo position
+    position = 0;
+  }
 }
