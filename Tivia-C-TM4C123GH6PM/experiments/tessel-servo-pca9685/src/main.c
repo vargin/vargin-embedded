@@ -40,6 +40,7 @@ const uint8_t switchPin = GPIO_PORT_PIN_5;
 
 I2CRegisters *i2c = I2C0;
 float position = 0.0;
+uint8_t moveRequested = 0;
 
 uint8_t
 getMode(I2CRegisters *i2c) {
@@ -87,7 +88,7 @@ void
 setPrescale(I2CRegisters *i2c, uint16_t frequencyHz) {
   I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
 
-  float prescaleValue = ((80000000 / MAX_FREQUENCY) / frequencyHz) - 1;
+  float prescaleValue = ((25000000 / MAX_FREQUENCY) / frequencyHz) - 1;
   uint8_t prescale = floor(prescaleValue);
 
   I2COperationResult result = I2CSendByte(i2c, PRESCALE_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
@@ -136,6 +137,9 @@ void
 setDutyCycle(I2CRegisters *i2c, float cycle) {
   uint16_t convertOn = 0;
   uint16_t convertOff = floor(MAX_FREQUENCY * cycle);
+
+  printf("Convert on (%d - %d) \n", convertOn, convertOn >> 8);
+  printf("Convert off (%d - %d) \n", convertOff, convertOff >> 8);
 
   I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
 
@@ -247,20 +251,25 @@ int main(void) {
   servicePort->PIN2 = 0x0;
   servicePort->PIN3 = 0x0;
 
-  setModuleFrequency(i2c, 100);
+  setModuleFrequency(i2c, 50);
 
   while (1) {
+    if (moveRequested) {
+      move(i2c, position);
+
+       position += 0.1;
+       if (position >= 1) {
+         // Reset servo position
+         position = 0.0;
+       }
+
+       moveRequested = 0;
+    }
   }
 }
 
 void GPIOPortA_Handler(void) {
   servicePort->ICR |= switchPin;
 
-  move(i2c, position);
-
-  position += 0.1;
-  if (position > 1) {
-    // Reset servo position
-    position = 0;
-  }
+  moveRequested = 1;
 }
