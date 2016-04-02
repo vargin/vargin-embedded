@@ -108,11 +108,6 @@ setPrescale(I2CRegisters *i2c, uint16_t frequencyHz) {
 
 /**
  * Sets the PWM frequency in Hz for the PCA9685 chip.
- * 1. Set START (D0) and TEMP (D4) in CONFIG (register 0x03) to begin a new conversion,
- *    i.e., write CONFIG with 0x11;
- * 2. Poll RDY (D0) in STATUS (register 0) until it is low (=0);
- * 3. Read the upper and lower bytes of the temperature value from DATAh and DATAl
- *    (registers 0x01 and 0x02), respectively.
  */
 void
 setModuleFrequency(I2CRegisters *i2c, uint16_t frequencyHz) {
@@ -122,15 +117,9 @@ setModuleFrequency(I2CRegisters *i2c, uint16_t frequencyHz) {
   // So we're setting SLEEP bit to set prescale.
   setMode(i2c, mode | 0x10);
 
-  mode = getMode(i2c);
-
   setPrescale(i2c, frequencyHz);
 
   setMode(i2c, 0xa1);
-
-  mode = getMode(i2c);
-
-  printf("Mode has been read successfully: %02x", mode);
 }
 
 void
@@ -143,63 +132,14 @@ setDutyCycle(I2CRegisters *i2c, float cycle) {
 
   I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
 
-  I2COperationResult result = I2CSendByte(
-      i2c,
-      LED0_ON_L_ADDRESS + (SERVO_INDEX - 1) * 4,
-      I2C_MCS_RUN | I2C_MCS_START
-  );
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_ON_L register address %d", result);
-    return;
-  }
-
-  result = I2CSendByte(i2c, convertOn, I2C_MCS_RUN | I2C_MCS_STOP);
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_ON_L register data %d", result);
-    return;
-  }
-
-  SysTickDelay(100);
-
-  result = I2CSendByte(i2c, LED0_ON_H_ADDRESS + (SERVO_INDEX - 1) * 4, I2C_MCS_START | I2C_MCS_RUN);
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_ON_H register address %d", result);
-    return;
-  }
-
-  result = I2CSendByte(i2c, convertOn >> 8, I2C_MCS_RUN | I2C_MCS_STOP);
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_ON_H register data %d", result);
-    return;
-  }
-
-  SysTickDelay(100);
-
-  result = I2CSendByte(i2c, LED0_OFF_L_ADDRESS + (SERVO_INDEX - 1) * 4, I2C_MCS_START | I2C_MCS_RUN);
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_OFF_L register address %d", result);
-    return;
-  }
-
-  result = I2CSendByte(i2c, convertOff, I2C_MCS_RUN | I2C_MCS_STOP);
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_OFF_L register data %d", result);
-    return;
-  }
-
-  SysTickDelay(100);
-
-  result = I2CSendByte(i2c, LED0_OFF_H_ADDRESS + (SERVO_INDEX - 1) * 4, I2C_MCS_START | I2C_MCS_RUN);
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_OFF_H register address %d", result);
-    return;
-  }
-
-  result = I2CSendByte(i2c, convertOff >> 8, I2C_MCS_RUN | I2C_MCS_STOP);
-  if (result != OPERATION_OK) {
-    printf("Failed to write LED0_OFF_H register data %d", result);
-    return;
-  }
+  I2CSendByte(i2c, LED0_ON_L_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, convertOn & 0xFF, I2C_MCS_RUN);
+  I2CSendByte(i2c, LED0_ON_H_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, convertOn >> 8, I2C_MCS_RUN);
+  I2CSendByte(i2c, LED0_OFF_L_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, convertOff & 0xFF, I2C_MCS_RUN);
+  I2CSendByte(i2c, LED0_OFF_H_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, convertOff >> 8, I2C_MCS_RUN | I2C_MCS_STOP);
 }
 
 void move(I2CRegisters *i2c, float position) {
@@ -207,11 +147,11 @@ void move(I2CRegisters *i2c, float position) {
 }
 
 int main(void) {
-  // Enable 80Mhz clock.
-  PLLInitialize(4);
+  // Enable 50Mhz clock.
+  PLLInitialize(7);
 
   // Use 1ms gradation for 80 Mhz clock.
-  SysTickInitialize(80000UL);
+  SysTickInitialize(50000UL);
 
   // Activate service port A.
   System_CTRL_RCGCGPIO_R |= System_CTRL_RCGCGPIO_GPIOA_MASK;
@@ -239,8 +179,8 @@ int main(void) {
   // Enable IRQ 0
   NVIC->EN0 = 1 << 0;
 
-  // I2C0, 80Mhz system clock.
-  I2CInitialize(I2C0Module, 80);
+  // I2C0, 50Mhz system clock.
+  I2CInitialize(I2C0Module, 50);
 
   // Turn on servo
   // servicePort->DATA &= ~servoSwitchPin;
