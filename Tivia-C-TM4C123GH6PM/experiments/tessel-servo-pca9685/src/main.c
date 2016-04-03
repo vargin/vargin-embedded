@@ -30,7 +30,7 @@
 #define SERVO_INDEX 1
 #define MAX_FREQUENCY 4096
 #define LOW_PWM 0.05
-#define HIGH_PWM 0.12
+#define HIGH_PWM 0.14
 
 GPIORegisters *servicePort = GPIOA;
 const uint8_t address2Pin = GPIO_PORT_PIN_2;
@@ -42,93 +42,43 @@ I2CRegisters *i2c = I2C0;
 float position = 0.0;
 uint8_t moveRequested = 0;
 
-uint8_t
-getMode(I2CRegisters *i2c) {
-  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
-
-  I2COperationResult result = I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_RUN | I2C_MCS_START);
-  if (result != OPERATION_OK) {
-    printf("Failed to write mode1 register address %d", result);
-    return 0;
-  }
-
-  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Read);
-
-  uint8_t mode = 0x0;
-
-  result = I2CReceiveByte(i2c, &mode, I2C_MCS_START | I2C_MCS_RUN | I2C_MCS_STOP);
-  if (result != OPERATION_OK) {
-    printf("Failed to receive mode %d", result);
-    return 0;
-  }
-
-  return mode;
-}
-
-void
-setMode(I2CRegisters *i2c, uint8_t mode) {
-  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
-
-  I2COperationResult result = I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_RUN | I2C_MCS_START);
-  if (result != OPERATION_OK) {
-    printf("Failed to write mode1 register address %d", result);
-    return;
-  }
-
-  result = I2CSendByte(i2c, mode, I2C_MCS_RUN | I2C_MCS_STOP);
-  if (result != OPERATION_OK) {
-    printf("Failed to set mode %d", result);
-    return;
-  }
-
-  SysTickDelay(500);
-}
-
-void
-setPrescale(I2CRegisters *i2c, uint16_t frequencyHz) {
-  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
-
-  float prescaleValue = ((25000000 / MAX_FREQUENCY) / frequencyHz) - 1;
-  uint8_t prescale = floor(prescaleValue);
-
-  I2COperationResult result = I2CSendByte(i2c, PRESCALE_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
-  if (result != OPERATION_OK) {
-    printf("Failed to write prescale register address %d", result);
-    return;
-  }
-
-  result = I2CSendByte(i2c, prescale, I2C_MCS_RUN | I2C_MCS_STOP);
-  if (result != OPERATION_OK) {
-    printf("Failed to write prescale register data %d", result);
-    return;
-  }
-
-  SysTickDelay(500);
-}
 
 /**
  * Sets the PWM frequency in Hz for the PCA9685 chip.
  */
 void
 setModuleFrequency(I2CRegisters *i2c, uint16_t frequencyHz) {
-  uint8_t mode = getMode(i2c);
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
+  I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+
+  uint8_t mode = 0x0;
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Read);
+  I2CReceiveByte(i2c, &mode, I2C_MCS_START | I2C_MCS_RUN);
+
+  I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
 
   // Writes to PRE_SCALE register are blocked when SLEEP bit is logic 0 (MODE 1).
   // So we're setting SLEEP bit to set prescale.
-  setMode(i2c, mode | 0x10);
+  I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, mode | 0x10, I2C_MCS_RUN);
 
-  setPrescale(i2c, frequencyHz);
+  float prescaleValue = ((25000000 / MAX_FREQUENCY) / frequencyHz) - 1;
+  uint8_t prescale = floor(prescaleValue);
 
-  setMode(i2c, 0xa1);
+  I2CSendByte(i2c, PRESCALE_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, prescale, I2C_MCS_RUN);
+
+  I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, mode, I2C_MCS_RUN);
+
+  I2CSendByte(i2c, MODE1_ADDRESS, I2C_MCS_START | I2C_MCS_RUN);
+  I2CSendByte(i2c, 0xa1, I2C_MCS_RUN | I2C_MCS_STOP);
 }
 
 void
 setDutyCycle(I2CRegisters *i2c, float cycle) {
   uint16_t convertOn = 0;
   uint16_t convertOff = floor(MAX_FREQUENCY * cycle);
-
-  printf("Convert on (%d - %d) \n", convertOn, convertOn >> 8);
-  printf("Convert off (%d - %d) \n", convertOff, convertOff >> 8);
 
   I2CSetSlaveAddress(i2c, SLAVE_I2C_ADDRESS, Write);
 
@@ -194,7 +144,7 @@ int main(void) {
   setModuleFrequency(i2c, 50);
 
   while (1) {
-    if (moveRequested) {
+    //if (moveRequested) {
       move(i2c, position);
 
        position += 0.1;
@@ -203,13 +153,15 @@ int main(void) {
          position = 0.0;
        }
 
+       SysTickDelay(500);
+
        moveRequested = 0;
-    }
+    //}
   }
 }
 
 void GPIOPortA_Handler(void) {
   servicePort->ICR |= switchPin;
 
-  moveRequested = 1;
+  //moveRequested = 1;
 }
