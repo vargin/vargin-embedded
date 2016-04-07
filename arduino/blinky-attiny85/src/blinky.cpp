@@ -1,24 +1,29 @@
-#include "Arduino.h"
+#include <avr/io.h>
+#include <util/delay.h>
 
-// Most Arduino boards already have a LED attached to pin 13 on the board itself
-#define LED_PIN 0
 
-struct DelayType {
-  uint32_t high;
-  uint32_t low;
-};
+int main (void)
+{
+  // set PB0 to be output
+  DDRB = 0b00000001;
+  while (1) {
 
-DelayType ledDelay;
+    // flash# 1:
+    // set PB0 high
+    PORTB = 0b00000001;
+    _delay_ms(20);
+    // set PB0 low
+    PORTB = 0b00000000;
+    _delay_ms(20);
 
-void setup() {
-  ledDelay.high = 1000;
-  ledDelay.low = 1000;
-  pinMode(LED_PIN, OUTPUT);
-}
+    // flash# 2:
+    // set PB0 high
+    PORTB = 0b00000001;
+    _delay_ms(200);
+    // set PB0 low
+    PORTB = 0b00000000;
+    _delay_ms(200);
+  }
 
-void loop() {
-  digitalWrite(LED_PIN, HIGH);
-  delay(ledDelay.high);
-  digitalWrite(LED_PIN, LOW);
-  delay(ledDelay.low);
+  return 1;
 }
