@@ -13,6 +13,7 @@ Source code is uploaded to microcontroller via Arduino UNO ISP, see `platformio.
 platform = atmelavr
 framework = arduino
 board = attiny85
+upload_protocol = stk500v1
 upload_flags = -P$UPLOAD_PORT -b$UPLOAD_SPEED
 
 # Arduino ISP programmer settings
