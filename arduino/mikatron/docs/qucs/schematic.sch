@@ -1,6 +1,6 @@
 <Qucs Schematic 0.0.19>
 <Properties>
-  <View=0,0,800,800,1,0,0>
+  <View=0,-1560,800,800,1,0,0>
   <Grid=10,10,1>
   <DataSet=schematic.dat>
   <DataDisplay=schematic.dpl>
@@ -16,8 +16,7 @@
 <Symbol>
 </Symbol>
 <Components>
-  <R R1 1 320 160 -26 15 0 0 "50 Ohm" 1 "26.85" 0 "0.0" 0 "0.0" 0 "26.85" 0 "european" 0>
-  <C C1 1 290 180 -26 17 0 0 "1 pF" 1 "" 0 "neutral" 0>
+  <Vdc V1 1 300 -1250 18 -26 0 1 "1 V" 1>
 </Components>
 <Wires>
 </Wires>
