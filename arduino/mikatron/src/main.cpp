@@ -32,18 +32,18 @@ setLow(uint8_t pin) {
 void
 initADC() {
   // Choose Vcc as reference voltage and right value adjustment.
-  //ADMUX &= ~((1 << REFS1) | (1 << REFS0) | (1 << ADLAR));
+  ADMUX &= ~((1 << REFS1) | (1 << REFS0) | (1 << ADLAR));
 
-  // Choose ADC0.
-  //ADMUX &= ~((1 << MUX0) | (1 << MUX1) | (1 << MUX2) | (1 << MUX3));
+  // Choose ADC2.
+  ADMUX |= 1 << MUX1;
 
   // Choose free running mode.
-  //ADCSRB &= ~((1 << ADTS0) | (1 << ADTS1) | (1 << ADTS2));
+  ADCSRB &= ~((1 << ADTS0) | (1 << ADTS1) | (1 << ADTS2));
 
   ADCSRA |= (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2);
 
-  // Turn off Digital input on PB5;
-  DIDR0 |= ADC0D;
+  // Turn off Digital input on PB4;
+  DIDR0 |= ADC2D;
 
   // Enable ADC and interruptions.
   ADCSRA |= (1 << ADEN) | (1 << ADIE) | (1 << ADATE);
@@ -52,8 +52,8 @@ initADC() {
 int main(void) {
   // Set PB2 to be output.
   DDRB |= 1 << DDB2;
-  // Set PB5 as the input.
-  DDRB &= ~(1 << DDB5);
+  // Set PB4 as the input.
+  DDRB &= ~(1 << DDB4);
 
   softuart_init();
   softuart_turn_rx_off();
@@ -68,16 +68,8 @@ int main(void) {
     if (analogResultChanged) {
       analogResultChanged = 0;
 
-      softuart_puts("-L: ");
+      softuart_putchar('-');
       char str[5];
-      itoa(analogLow, str, 10);
-      softuart_puts(str);
-
-      softuart_puts(", H: ");
-      itoa(analogHigh, str, 10);
-      softuart_puts(str);
-
-      softuart_puts(", F: ");
       itoa((analogHigh << 8) | analogLow, str, 10);
       softuart_puts(str);
       softuart_putchar('-');
