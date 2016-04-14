@@ -11,12 +11,21 @@ volatile uint8_t pinChanged = 0;
 volatile uint16_t previousAction = 0;
 volatile uint32_t actionTime = 0;
 
+volatile uint8_t currentScheduleIndex = 0;
+volatile uint16_t currentSchedule[8];
+
+#define MAX_SCHEDULES_COUNT 8
+volatile uint32_t schedules[8];
+volatile uint16_t scheduleIndex = 0;
+
 void
 startConversion() {
   ADCSRA |= 1 << ADSC;
 }
 
 ISR(ADC_vect) {
+  // Read low bit first as suggested in the datasheet, to make sure we read low and high bits of
+  // the same number.
   analogLow = ADCL;
   analogHigh = ADCH;
   analogResultChanged = 1;
@@ -66,6 +75,38 @@ printAction(uint16_t action) {
   softuart_puts(str);
   softuart_putchar('-');
   startConversion();
+}
+
+uint32_t flushCurrentSchedule(uint16_t action) {
+  uint32_t numberOfSeconds = 0;
+  for (uint8_t i = 0; i < currentScheduleIndex; i++) {
+    uint32_t multiplier = 1;
+    uint8_t power = currentScheduleIndex - i - 1;
+    if (power > 0) {
+      for (uint8_t multiplierIndex = 0; multiplierIndex < power; multiplierIndex++) {
+        multiplier *= 10;
+      }
+    }
+
+    numberOfSeconds += currentSchedule[i] * multiplier;
+  }
+
+  switch(action) {
+    // Minutes.
+    case 6:
+      numberOfSeconds *= 60;
+      break;
+    // Hours.
+    case 7:
+      numberOfSeconds *= 60 * 60;
+      break;
+    default:
+      break;
+  }
+
+  currentScheduleIndex = 0;
+
+  return numberOfSeconds;
 }
 
 int main(void) {
@@ -137,6 +178,26 @@ int main(void) {
     if (action != previousAction) {
       // We display action only once button is unpressed.
       if (action == 0) {
+        if (previousAction < 5) {
+          if (currentScheduleIndex >= 7) {
+            currentScheduleIndex = 0;
+          }
+
+          currentSchedule[currentScheduleIndex++] = previousAction;
+        } else {
+          if (scheduleIndex == MAX_SCHEDULES_COUNT - 1) {
+            scheduleIndex = 0;
+          }
+
+          schedules[scheduleIndex++] = flushCurrentSchedule(previousAction);
+
+          softuart_putchar('|');
+          char str[8];
+          itoa(schedules[scheduleIndex - 1], str, 10);
+          softuart_puts(str);
+          softuart_putchar('|');
+        }
+
         printAction(previousAction);
         actionTime = 0;
       }
