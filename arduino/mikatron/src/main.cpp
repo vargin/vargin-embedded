@@ -18,6 +18,19 @@ volatile uint16_t currentSchedule[8];
 volatile uint32_t schedules[8];
 volatile uint16_t scheduleIndex = 0;
 
+const uint8_t Note_C  = 239;
+const uint8_t Note_CS = 225;
+const uint8_t Note_D  = 213;
+const uint8_t Note_DS = 201;
+const uint8_t Note_E  = 190;
+const uint8_t Note_F  = 179;
+const uint8_t Note_FS = 169;
+const uint8_t Note_G  = 159;
+const uint8_t Note_GS = 150;
+const uint8_t Note_A  = 142;
+const uint8_t Note_AS = 134;
+const uint8_t Note_B  = 127;
+
 void
 startConversion() {
   ADCSRA |= 1 << ADSC;
@@ -31,11 +44,6 @@ ISR(ADC_vect) {
   analogResultChanged = 1;
 }
 
-/*ISR(PCINT0_vect) {
-  pinChanged = 1;
-}*/
-
-
 void
 setHigh(uint8_t pin) {
   PORTB |= 1 << pin;
@@ -45,6 +53,36 @@ void
 setLow(uint8_t pin) {
   PORTB &= ~(1 << pin);
 }
+
+void
+delay_ms(uint16_t ms) {
+  for (uint16_t i = 0; i < ms; i++) {
+    _delay_ms(1);
+  }
+}
+
+void
+tone(unsigned char divisor, unsigned char octave, unsigned long duration) {
+  TCCR1 = 0x90 | (8-octave); // for 1MHz clock
+  //TCCR1 = 0x90 | (11-octave); // for 8MHz clock
+  OCR1C = divisor-1;         // set the OCR
+  delay_ms(duration);
+  TCCR1 = 0x90;              // stop the counter
+}
+
+// Play a scale
+void
+playTune(void) {
+  tone(Note_C, 4, 500);
+  tone(Note_D, 4, 500);
+  tone(Note_E, 4, 500);
+  tone(Note_F, 4, 500);
+  tone(Note_G, 4, 500);
+  tone(Note_A, 4, 500);
+  tone(Note_B, 4, 500);
+  tone(Note_C, 5, 500);
+}
+
 
 void
 initADC() {
@@ -96,7 +134,7 @@ uint32_t flushCurrentSchedule(uint16_t action) {
     case 6:
       numberOfSeconds *= 60;
       break;
-    // Hours.
+      // Hours.
     case 7:
       numberOfSeconds *= 60 * 60;
       break;
@@ -109,19 +147,28 @@ uint32_t flushCurrentSchedule(uint16_t action) {
   return numberOfSeconds;
 }
 
+/**
+ * Pinout:
+ * PB0 (pin 5) - UART Rx;
+ * PB1 (pin 6) - UART Tx;
+ * PB2 (pin 7) - LED;
+ * PB3 (pin 2) - DAC (speaker);
+ * PB4 (pin 3) - ADC (buttons).
+ */
+
 int main(void) {
   // Set PB2 to be output.
-  DDRB |= 1 << DDB2;
+  DDRB |= (1 << DDB2) | (1 << DDB3);
   // Set PB4 as the input.
   DDRB &= ~(1 << DDB4);
 
- /* PCMSK |= 1 << PCINT4;
-  GIMSK |= 1 << PCIE;*/
+  /* PCMSK |= 1 << PCINT4;
+   GIMSK |= 1 << PCIE;*/
 
   softuart_init();
   softuart_turn_rx_off();
-  initADC();
 
+  initADC();
   sei();
 
   // Start first conversion.
@@ -172,6 +219,7 @@ int main(void) {
         setHigh(PB2);
         _delay_ms(30);
         setLow(PB2);
+        //playTune();
       }
     }
 
@@ -208,18 +256,5 @@ int main(void) {
       actionTime += 200;
       _delay_ms(200);
     }
-
-   /* if (pinChanged) {
-      pinChanged = 0;
-      softuart_putchar('Z');
-    }*/
-
-    //setHigh(PB2);
-    //_delay_ms(500);
-
-    //setLow(PB2);
-    //_delay_ms(500);
-
-    //softuart_putchar('+');
   }
 }
