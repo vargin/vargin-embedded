@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
-#include "softuart.h"
+#include "uart.h"
 
 volatile uint8_t analogLow = 0;
 volatile uint8_t analogHigh = 0;
@@ -17,19 +17,6 @@ volatile uint16_t currentSchedule[8];
 #define MAX_SCHEDULES_COUNT 8
 volatile uint32_t schedules[8];
 volatile uint16_t scheduleIndex = 0;
-
-const uint8_t Note_C  = 239;
-const uint8_t Note_CS = 225;
-const uint8_t Note_D  = 213;
-const uint8_t Note_DS = 201;
-const uint8_t Note_E  = 190;
-const uint8_t Note_F  = 179;
-const uint8_t Note_FS = 169;
-const uint8_t Note_G  = 159;
-const uint8_t Note_GS = 150;
-const uint8_t Note_A  = 142;
-const uint8_t Note_AS = 134;
-const uint8_t Note_B  = 127;
 
 void
 startConversion() {
@@ -55,36 +42,6 @@ setLow(uint8_t pin) {
 }
 
 void
-delay_ms(uint16_t ms) {
-  for (uint16_t i = 0; i < ms; i++) {
-    _delay_ms(1);
-  }
-}
-
-void
-tone(unsigned char divisor, unsigned char octave, unsigned long duration) {
-  TCCR1 = 0x90 | (8-octave); // for 1MHz clock
-  //TCCR1 = 0x90 | (11-octave); // for 8MHz clock
-  OCR1C = divisor-1;         // set the OCR
-  delay_ms(duration);
-  TCCR1 = 0x90;              // stop the counter
-}
-
-// Play a scale
-void
-playTune(void) {
-  tone(Note_C, 4, 500);
-  tone(Note_D, 4, 500);
-  tone(Note_E, 4, 500);
-  tone(Note_F, 4, 500);
-  tone(Note_G, 4, 500);
-  tone(Note_A, 4, 500);
-  tone(Note_B, 4, 500);
-  tone(Note_C, 5, 500);
-}
-
-
-void
 initADC() {
   // Choose Vcc as reference voltage and right value adjustment.
   ADMUX &= ~((1 << REFS1) | (1 << REFS0) | (1 << ADLAR));
@@ -106,12 +63,23 @@ initADC() {
 }
 
 void
+uart_puts(const char* str) {
+  while (*str) {
+    TxByte(*str++);
+  }
+}
+
+void uart_putchar(const char byte) {
+  TxByte(byte);
+}
+
+void
 printAction(uint16_t action) {
-  softuart_putchar('-');
+  uart_putchar('-');
   char str[2];
   itoa(action, str, 10);
-  softuart_puts(str);
-  softuart_putchar('-');
+  uart_puts(str);
+  uart_putchar('-');
   startConversion();
 }
 
@@ -158,15 +126,9 @@ uint32_t flushCurrentSchedule(uint16_t action) {
 
 int main(void) {
   // Set PB2 to be output.
-  DDRB |= (1 << DDB2) | (1 << DDB3);
+  DDRB |= (1 << DDB2);
   // Set PB4 as the input.
   DDRB &= ~(1 << DDB4);
-
-  /* PCMSK |= 1 << PCINT4;
-   GIMSK |= 1 << PCIE;*/
-
-  softuart_init();
-  softuart_turn_rx_off();
 
   initADC();
   sei();
@@ -186,7 +148,7 @@ int main(void) {
 
     if (analogResult < 150) {
       action = 1;
-    } else if (analogResult < 350) {
+    } else if (analogResult < 250) {
       action = 2;
     } else if (analogResult < 500) {
       action = 3;
@@ -239,11 +201,11 @@ int main(void) {
 
           schedules[scheduleIndex++] = flushCurrentSchedule(previousAction);
 
-          softuart_putchar('|');
+          uart_putchar('|');
           char str[8];
           itoa(schedules[scheduleIndex - 1], str, 10);
-          softuart_puts(str);
-          softuart_putchar('|');
+          uart_puts(str);
+          uart_putchar('|');
         }
 
         printAction(previousAction);
