@@ -194,6 +194,7 @@ int main(void) {
           }
 
           currentSchedule[currentScheduleIndex++] = previousAction;
+          _delay_ms(100);
         } else {
           if (scheduleIndex == MAX_SCHEDULES_COUNT - 1) {
             scheduleIndex = 0;
