@@ -3,6 +3,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include "uart.h"
+#include "alarm.h"
 
 volatile uint8_t analogLow = 0;
 volatile uint8_t analogHigh = 0;
@@ -126,7 +127,7 @@ uint32_t flushCurrentSchedule(uint16_t action) {
 
 int main(void) {
   // Set PB2 to be output.
-  DDRB |= (1 << DDB2);
+  DDRB |= (1 << DDB1) | (1 << DDB2);
   // Set PB4 as the input.
   DDRB &= ~(1 << DDB4);
 
@@ -181,7 +182,7 @@ int main(void) {
         setHigh(PB2);
         _delay_ms(30);
         setLow(PB2);
-        //playTune();
+        Alarm::play();
       }
     }
 
