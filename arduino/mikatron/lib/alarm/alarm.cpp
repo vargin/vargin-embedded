@@ -31,10 +31,14 @@ void Alarm::delay_ms(unsigned long delay) {
 
 void Alarm::tone(unsigned char divisor, unsigned char octave, unsigned long duration) {
   // For 1MHz clock.
-  TCCR1 = 0x90 | (8 - octave);
+  // 1. Timer/Counter1 is reset to $00 in the CPU clock cycle after a compare match with
+  // OCR1A register;
+  // 2. Output pin action following a compare match with compare register A in Timer/Counter1 will
+  // be: "Toggle the OC1A output line.".
+  TCCR1 = (1 << CTC1) | (1 << COM1A0) | (8 - octave);
 
   // for 8MHz clock
-  // TCCR1 = 0x90 | (11-octave);
+  // TCCR1 = (1 << CTC1) | (1 << COM1A0) | (11-octave);
 
   // Set the OCR.
   OCR1C = divisor - 1;
@@ -42,7 +46,7 @@ void Alarm::tone(unsigned char divisor, unsigned char octave, unsigned long dura
   Alarm::delay_ms(duration);
 
   // Stop the counter.
-  TCCR1 = 0x90;
+  TCCR1 = (1 << CTC1) | (1 << COM1A0);
 }
 
 void Alarm::play() {

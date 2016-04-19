@@ -117,12 +117,20 @@ uint32_t flushCurrentSchedule(uint16_t action) {
 }
 
 /**
- * Pinout:
- * PB0 (pin 5) - UART Rx;
- * PB1 (pin 6) - UART Tx;
+ * GPIO ports:
+ * PB0 (pin 5) - Vacant;
+ * PB1 (pin 6) - PWM (speaker);
  * PB2 (pin 7) - LED;
- * PB3 (pin 2) - DAC (speaker);
- * PB4 (pin 3) - ADC (buttons).
+ * PB3 (pin 2) - UART Rx/Tx;
+ * PB4 (pin 3) - ADC (buttons);
+ * PB5 (pin 1) - Vacant (reset).
+ *
+ * UART Rx/Tx:
+ *            D1
+ * AVR ----+--|>|-----+----- Tx
+ *         |      10K $ R1
+ *         +--------(/^\)--- Rx
+ *              NPN E   C
  */
 
 int main(void) {
@@ -147,11 +155,11 @@ int main(void) {
     uint16_t analogResult = (analogHigh << 8) | analogLow;
     uint8_t action = 0;
 
-    if (analogResult < 150) {
+    if (analogResult < 200) {
       action = 1;
-    } else if (analogResult < 250) {
+    } else if (analogResult < 400) {
       action = 2;
-    } else if (analogResult < 500) {
+    } else if (analogResult < 600) {
       action = 3;
     } else if (analogResult < 1000) {
       action = 4;
@@ -180,7 +188,7 @@ int main(void) {
 
       if (previousAction != action && action > 0) {
         setHigh(PB2);
-        _delay_ms(30);
+        _delay_ms(100);
         setLow(PB2);
         Alarm::play();
       }
