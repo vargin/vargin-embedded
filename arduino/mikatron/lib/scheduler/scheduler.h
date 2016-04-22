@@ -18,6 +18,10 @@ public:
 
   uint32_t commit(CommitType commitType);
 
+  uint8_t *getBuffer();
+
+  uint8_t getBufferLength();
+
 private:
   uint8_t *pBuffer;
   uint8_t pBufferIndex;

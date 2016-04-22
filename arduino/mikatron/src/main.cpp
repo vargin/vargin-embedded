@@ -7,10 +7,11 @@
 #include "scheduler.h"
 
 volatile uint16_t analogResult = 0;
-volatile uint16_t previousAction = 0;
-volatile uint32_t actionTime = 0;
+uint16_t previousAction = 0;
+uint32_t actionTime = 0;
 
-const uint16_t LONG_PRESS_DURATION = 1500;
+const uint16_t LONG_PRESS_DURATION = 1200;
+char numberString[10];
 
 void
 startConversion() {
@@ -67,11 +68,8 @@ void uart_putchar(const char byte) {
 }
 
 void printNumber(uint32_t number) {
-  uart_putchar('-');
-  char str[8];
-  itoa(number, str, 10);
-  uart_puts(str);
-  uart_putchar('-');
+  ltoa(number, numberString, 10);
+  uart_puts(numberString);
 }
 
 /**
@@ -91,6 +89,38 @@ void printNumber(uint32_t number) {
  *              NPN E   C
  */
 
+/*
+void debug(Scheduler *scheduler) {
+  uart_puts("[D:");
+
+  uart_puts("[AR:");
+  printNumber(analogResult);
+  uart_putchar(']');
+
+  uart_puts("[PA:");
+  printNumber(previousAction);
+  uart_putchar(']');
+
+  uart_puts("[AT:");
+  printNumber(actionTime);
+  uart_putchar(']');
+
+  const uint8_t bufferLength = scheduler->getBufferLength();
+  uart_puts("[BFL:");
+  printNumber(bufferLength);
+  uart_putchar(']');
+  if (bufferLength > 0) {
+    uart_puts("[BF:");
+    const uint8_t *buffer = scheduler->getBuffer();
+    for (uint8_t i = 0; i < bufferLength; i++) {
+      printNumber(buffer[i]);
+    }
+    uart_putchar(']');
+  }
+  uart_putchar(']');
+}
+*/
+
 int main(void) {
   // Set PB2 to be output.
   DDRB |= (1 << DDB1) | (1 << DDB2);
@@ -100,11 +130,13 @@ int main(void) {
   initADC();
   sei();
 
-  Scheduler *scheduler = new Scheduler(100, 10);
+  Scheduler *scheduler = new Scheduler(20, 10);
 
   // Start first conversion.
   startConversion();
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
   while (1) {
     if (analogResult == 0) {
       continue;
@@ -147,9 +179,8 @@ int main(void) {
 
       if (previousAction != action && action > 0) {
         setHigh(PB2);
-        _delay_ms(100);
-        setLow(PB2);
         Alarm::play();
+        setLow(PB2);
       }
     }
 
@@ -159,23 +190,28 @@ int main(void) {
         if (previousAction < 5) {
           scheduler->push(previousAction);
         } else {
-          uint32_t numberOfMs = scheduler->commit((CommitType) (previousAction - 4));
-          printNumber(numberOfMs);
+          uint32_t numberOfSeconds = scheduler->commit((CommitType) (previousAction - 4));
+          uart_puts("[SCHEDULED:");
+          printNumber(numberOfSeconds);
+          uart_putchar(']');
         }
 
-        printNumber(previousAction);
+        actionTime = 0;
 
-        _delay_ms(100);
+        uart_puts("[ACTION:");
+        printNumber(previousAction);
+        uart_putchar(']');
 
         startConversion();
-        actionTime = 0;
       }
 
       previousAction = action;
-    } else if (action > 0 && action < 5) {
+    } else if (action > 0 && action < 5 && actionTime < LONG_PRESS_DURATION) {
       // Increment only when we are still not sure if it's long press.
       actionTime += 200;
-      _delay_ms(200);
     }
+
+    _delay_ms(200);
   }
+#pragma clang diagnostic pop
 }

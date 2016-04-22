@@ -16,7 +16,7 @@ void Scheduler::push(uint8_t digit) {
     return;
   }
 
- pBuffer[pBufferIndex++] = digit;
+  pBuffer[pBufferIndex++] = digit;
 }
 
 uint32_t Scheduler::commit(CommitType commitType) {
@@ -37,7 +37,7 @@ uint32_t Scheduler::commit(CommitType commitType) {
     case CommitType::Minutes:
       numberOfSeconds *= 60;
       break;
-    case CommitType ::Hours:
+    case CommitType::Hours:
       numberOfSeconds *= 60 * 60;
       break;
     default:
@@ -49,4 +49,12 @@ uint32_t Scheduler::commit(CommitType commitType) {
   pSchedules[pScheduleIndex++] = numberOfSeconds;
 
   return numberOfSeconds;
+}
+
+uint8_t *Scheduler::getBuffer() {
+  return pBuffer;
+}
+
+uint8_t Scheduler::getBufferLength() {
+  return pBufferIndex;
 }
