@@ -1,0 +1,1 @@
+main loop in  wxFrame_test
