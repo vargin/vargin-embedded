@@ -5,6 +5,7 @@
 #include "uart.h"
 #include "alarm.h"
 #include "scheduler.h"
+#include "i2cmaster.h"
 
 volatile uint16_t analogResult = 0;
 uint16_t previousAction = 0;
@@ -12,6 +13,8 @@ uint32_t actionTime = 0;
 
 const uint16_t LONG_PRESS_DURATION = 1200;
 char numberString[10];
+
+#define RTC_ADDRESS  0x68
 
 void
 startConversion() {
@@ -130,6 +133,19 @@ int main(void) {
   initADC();
   sei();
 
+  i2c_init();
+
+  i2c_start_wait(RTC_ADDRESS + I2C_WRITE);
+  /*i2c_write(0x00);
+  i2c_rep_start(RTC_ADDRESS + I2C_READ);
+
+  unsigned char ret = i2c_readNak();
+  i2c_stop();
+
+  uart_puts("[SECONDS:");
+  printNumber(ret);
+  uart_putchar(']');*/
+
   Scheduler *scheduler = new Scheduler(20, 10);
 
   // Start first conversion.
@@ -157,6 +173,7 @@ int main(void) {
     }
 
     analogResult = 0;
+
 
     // Long press actions.
     if (actionTime >= LONG_PRESS_DURATION) {

@@ -5,7 +5,7 @@
 // Taken from http://www.technoblogy.com/show?KVO.
 
 // Example for Note C:
-// Frequence for note C4 is 261.63 Hz (see http://www.phy.mtu.edu/~suits/notefreqs.html),
+// Frequency for note C4 is 261.63 Hz (see http://www.phy.mtu.edu/~suits/notefreqs.html),
 // Divisor for this note will be = 1000000 (1 Mhz clock) / 261.63 = 3822.19.
 // However, the divider for the counter must fit into 8 bits, so the maximum number we can
 // represent is 255. The solution is to set the prescaler to divide the clock by 2^4, or 16.
