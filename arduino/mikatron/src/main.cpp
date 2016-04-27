@@ -5,7 +5,7 @@
 #include "uart.h"
 #include "alarm.h"
 #include "scheduler.h"
-#include "i2cmaster.h"
+#include "TinyWireM.h"
 
 volatile uint16_t analogResult = 0;
 uint16_t previousAction = 0;
@@ -53,7 +53,7 @@ initADC() {
   ADCSRA |= (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2);
 
   // Turn off Digital input on PB4;
-  DIDR0 |= ADC2D;
+  //DIDR0 |= ADC2D;
 
   // Enable ADC and interruptions.
   ADCSRA |= (1 << ADEN) | (1 << ADIE) | (1 << ADATE);
@@ -124,27 +124,59 @@ void debug(Scheduler *scheduler) {
 }
 */
 
+static uint8_t bcd2bin (uint8_t val) { return val - 6 * (val >> 4); }
+
+void readTime() {
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(0);
+  TinyWireM.endTransmission();
+
+  TinyWireM.requestFrom(RTC_ADDRESS, 7);
+  uint8_t ss = bcd2bin(TinyWireM.read() & 0x7F);
+  uint8_t mm = bcd2bin(TinyWireM.read());
+  uint8_t hh = bcd2bin(TinyWireM.read());
+  /*TinyWireM.read();
+  uint8_t d = bcd2bin(TinyWireM.read());
+  uint8_t m = bcd2bin(TinyWireM.read());
+  uint16_t y = bcd2bin(TinyWireM.read()) + 2000;*/
+
+  uart_puts("[SECONDS:");
+  printNumber(ss);
+  uart_putchar(']');
+
+  uart_puts("[MINUTES:");
+  printNumber(mm);
+  uart_putchar(']');
+
+  uart_puts("[HOUR:");
+  printNumber(hh);
+  uart_putchar(']');
+}
+
 int main(void) {
   // Set PB2 to be output.
-  DDRB |= (1 << DDB1) | (1 << DDB2);
+  DDRB |= (1 << DDB1);// | (1 << DDB2);
   // Set PB4 as the input.
   DDRB &= ~(1 << DDB4);
 
   initADC();
   sei();
 
-  i2c_init();
+  TinyWireM.begin();
 
-  i2c_start_wait(RTC_ADDRESS + I2C_WRITE);
-  /*i2c_write(0x00);
-  i2c_rep_start(RTC_ADDRESS + I2C_READ);
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(0);
+  TinyWireM.endTransmission();
 
-  unsigned char ret = i2c_readNak();
-  i2c_stop();
+  TinyWireM.requestFrom(RTC_ADDRESS, 1);
 
-  uart_puts("[SECONDS:");
-  printNumber(ret);
-  uart_putchar(']');*/
+  if (TinyWireM.read() >> 7) {
+    uart_puts("[NO TIME]");
+    return 1;
+  } else {
+    uart_puts("[WE HAVE TIME]");
+    readTime();
+  }
 
   Scheduler *scheduler = new Scheduler(20, 10);
 
@@ -218,6 +250,8 @@ int main(void) {
         uart_puts("[ACTION:");
         printNumber(previousAction);
         uart_putchar(']');
+
+        readTime();
 
         startConversion();
       }
