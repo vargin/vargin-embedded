@@ -7,7 +7,8 @@ enum CommitType {
   Seconds = 1,
   Minutes,
   Hours,
-  Time
+  Time,
+  Reset
 };
 
 class Scheduler {

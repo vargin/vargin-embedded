@@ -2,11 +2,6 @@
   TinyWireM.h - a wrapper(+) class for TWI/I2C Master library for the ATtiny on Arduino
   1/21/2011 BroHogan -  brohoganx10 at gmail dot com
 
-  Thanks to 'jkl' for the gcc version of Atmel's USI_TWI_Master code
-  http://www.cs.cmu.edu/~dst/ARTSI/Create/PC%20Comm/
-  I added Atmel's original Device dependant defines section back into USI_TWI_Master.h
- 
- 
  NOTE! - It's very important to use pullups on the SDA & SCL lines! More so than with the Wire lib.
  
  USAGE is modeled after the standard Wire library . . .

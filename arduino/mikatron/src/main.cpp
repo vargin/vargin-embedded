@@ -3,15 +3,16 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include "uart.h"
-#include "alarm.h"
+#include "speaker.h"
 #include "scheduler.h"
 #include "TinyWireM.h"
 
 volatile uint16_t analogResult = 0;
-uint16_t previousAction = 0;
+uint16_t previousAction = 10;
 uint32_t actionTime = 0;
 
 const uint16_t LONG_PRESS_DURATION = 1200;
+const uint16_t COMMIT_DURATION = 2400;
 char numberString[10];
 
 #define RTC_ADDRESS  0x68
@@ -53,7 +54,7 @@ initADC() {
   ADCSRA |= (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2);
 
   // Turn off Digital input on PB4;
-  //DIDR0 |= ADC2D;
+  // DIDR0 |= ADC2D;
 
   // Enable ADC and interruptions.
   ADCSRA |= (1 << ADEN) | (1 << ADIE) | (1 << ADATE);
@@ -77,9 +78,9 @@ void printNumber(uint32_t number) {
 
 /**
  * GPIO ports:
- * PB0 (pin 5) - Vacant;
+ * PB0 (pin 5) - SDA;
  * PB1 (pin 6) - PWM (speaker);
- * PB2 (pin 7) - LED;
+ * PB2 (pin 7) - SCL;
  * PB3 (pin 2) - UART Rx/Tx;
  * PB4 (pin 3) - ADC (buttons);
  * PB5 (pin 1) - Vacant (reset).
@@ -124,7 +125,15 @@ void debug(Scheduler *scheduler) {
 }
 */
 
-static uint8_t bcd2bin (uint8_t val) { return val - 6 * (val >> 4); }
+/**
+ * Converts binary coded decimal to decimal, e.g. 0101 0100/0x54/54: 0x54 - 6 * (0x54 >> 4) =
+ * 0x54 - 0x1e = 0x36/54.
+ * @param val
+ * @return
+ */
+static uint8_t bcd2bin (uint8_t val) {
+  return val - 6 * (val >> 4);
+}
 
 void readTime() {
   TinyWireM.beginTransmission(RTC_ADDRESS);
@@ -190,7 +199,7 @@ int main(void) {
       continue;
     }
 
-    uint8_t action = 0;
+    uint8_t action = 10;
 
     if (analogResult < 200) {
       action = 1;
@@ -198,48 +207,61 @@ int main(void) {
       action = 2;
     } else if (analogResult < 600) {
       action = 3;
-    } else if (analogResult < 1000) {
+    } else if (analogResult < 800) {
       action = 4;
-    } else {
-      action = 0;
+    } else if (analogResult < 1000) {
+      action = 5;
     }
 
     analogResult = 0;
 
-
     // Long press actions.
-    if (actionTime >= LONG_PRESS_DURATION) {
+    if (actionTime >= LONG_PRESS_DURATION && actionTime < COMMIT_DURATION) {
       switch (action) {
         case 1:
-          action = 5;
-          break;
-        case 2:
           action = 6;
           break;
-        case 3:
+        case 2:
           action = 7;
           break;
-        case 4:
+        case 3:
           action = 8;
+          break;
+        case 4:
+          action = 9;
+          break;
+        case 5:
+          action = 0;
           break;
         default:
           break;
       }
 
-      if (previousAction != action && action > 0) {
-        setHigh(PB2);
-        Alarm::play();
-        setLow(PB2);
+      if (previousAction != action && action < 10) {
+        Speaker::doubleBeep();
+      }
+    } else if (actionTime >= COMMIT_DURATION) {
+      if (previousAction != action && action < 10) {
+        Speaker::melody();
       }
     }
 
     if (action != previousAction) {
       // We display action only once button is unpressed.
-      if (action == 0) {
-        if (previousAction < 5) {
+      if (action == 10) {
+        if (actionTime < COMMIT_DURATION) {
           scheduler->push(previousAction);
+          if (actionTime < LONG_PRESS_DURATION) {
+            Speaker::beep();
+          }
+
+          uart_puts("[ACTION:");
+          printNumber(previousAction);
+          uart_putchar(']');
+
+          //readTime();
         } else {
-          uint32_t numberOfSeconds = scheduler->commit((CommitType) (previousAction - 4));
+          uint32_t numberOfSeconds = scheduler->commit((CommitType)previousAction);
           uart_puts("[SCHEDULED:");
           printNumber(numberOfSeconds);
           uart_putchar(']');
@@ -247,17 +269,11 @@ int main(void) {
 
         actionTime = 0;
 
-        uart_puts("[ACTION:");
-        printNumber(previousAction);
-        uart_putchar(']');
-
-        readTime();
-
         startConversion();
       }
 
       previousAction = action;
-    } else if (action > 0 && action < 5 && actionTime < LONG_PRESS_DURATION) {
+    } else if (action < 10 && actionTime < COMMIT_DURATION) {
       // Increment only when we are still not sure if it's long press.
       actionTime += 200;
     }

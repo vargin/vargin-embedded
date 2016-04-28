@@ -1,6 +1,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
-#include "alarm.h"
+#include "speaker.h"
 
 // Taken from http://www.technoblogy.com/show?KVO.
 
@@ -23,13 +23,13 @@ const int Note_A = 142;
 const int Note_AS = 134;
 const int Note_B = 127;
 
-void Alarm::delay_ms(unsigned long delay) {
+void Speaker::delay_ms(unsigned long delay) {
   for (unsigned long i = 0; i < delay; i++) {
     _delay_ms(1);
   }
 }
 
-void Alarm::tone(unsigned char divisor, unsigned char octave, unsigned long duration) {
+void Speaker::tone(unsigned char divisor, unsigned char octave, unsigned long duration) {
   // For 1MHz clock.
   // 1. Timer/Counter1 is reset to $00 in the CPU clock cycle after a compare match with
   // OCR1A register;
@@ -43,19 +43,28 @@ void Alarm::tone(unsigned char divisor, unsigned char octave, unsigned long dura
   // Set the OCR.
   OCR1C = divisor - 1;
 
-  Alarm::delay_ms(duration);
+  Speaker::delay_ms(duration);
 
   // Stop the counter.
   TCCR1 = (1 << CTC1) | (1 << COM1A0);
 }
 
-void Alarm::play() {
-  Alarm::tone(Note_C, 4, 50);
-  Alarm::tone(Note_D, 4, 50);
-  Alarm::tone(Note_E, 4, 50);
-  Alarm::tone(Note_F, 4, 50);
-  Alarm::tone(Note_G, 4, 50);
-  Alarm::tone(Note_A, 4, 50);
-  Alarm::tone(Note_B, 4, 50);
-  Alarm::tone(Note_C, 5, 50);
+void Speaker::melody() {
+  Speaker::tone(Note_C, 4, 50);
+  Speaker::tone(Note_D, 4, 50);
+  Speaker::tone(Note_E, 4, 50);
+  Speaker::tone(Note_F, 4, 50);
+  Speaker::tone(Note_G, 4, 50);
+  Speaker::tone(Note_A, 4, 50);
+  Speaker::tone(Note_B, 4, 50);
+  Speaker::tone(Note_C, 5, 50);
+}
+
+void Speaker::beep() {
+  Speaker::tone(Note_C, 4, 150);
+}
+
+void Speaker::doubleBeep() {
+  Speaker::tone(Note_C, 4, 150);
+  Speaker::tone(Note_D, 4, 150);
 }
