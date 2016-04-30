@@ -60,6 +60,15 @@ void Speaker::melody() {
   Speaker::tone(Note_C, 5, 50);
 }
 
+void Speaker::modeMelody() {
+  Speaker::tone(Note_C, 4, 50);
+  Speaker::tone(Note_D, 4, 50);
+  Speaker::tone(Note_E, 4, 50);
+  Speaker::tone(Note_C, 4, 50);
+  Speaker::tone(Note_D, 4, 50);
+  Speaker::tone(Note_E, 4, 50);
+}
+
 void Speaker::beep() {
   Speaker::tone(Note_C, 4, 150);
 }

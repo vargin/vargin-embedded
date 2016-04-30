@@ -7,6 +7,15 @@
 #include "scheduler.h"
 #include "TinyWireM.h"
 
+enum ModeType {
+  NoMode = 0,
+  Schedule,
+  GetTime,
+  SetTime
+};
+
+ModeType mode = NoMode;
+
 volatile uint16_t analogResult = 0;
 uint16_t previousAction = 10;
 uint32_t actionTime = 0;
@@ -163,8 +172,8 @@ void readTime() {
 }
 
 int main(void) {
-  // Set PB2 to be output.
-  DDRB |= (1 << DDB1);// | (1 << DDB2);
+  // Set PB1 to be output.
+  DDRB |= (1 << DDB1);
   // Set PB4 as the input.
   DDRB &= ~(1 << DDB4);
 
@@ -214,6 +223,36 @@ int main(void) {
     }
 
     analogResult = 0;
+
+    // Mode is not selected yet.
+    if (mode == NoMode) {
+      if (action == 10 && actionTime >= LONG_PRESS_DURATION) {
+        mode = (ModeType)previousAction;
+
+        actionTime = 0;
+        previousAction = action;
+
+        uart_puts("[MODE:");
+        printNumber(mode);
+        uart_putchar(']');
+      } else if (action != 10 && actionTime < LONG_PRESS_DURATION) {
+        previousAction = action;
+        actionTime += 200;
+      }
+
+      if (actionTime >= LONG_PRESS_DURATION && (actionTime - 200) < LONG_PRESS_DURATION) {
+        Speaker::modeMelody();
+      }
+
+      _delay_ms(200);
+      continue;
+    }
+
+    if (mode == GetTime) {
+      readTime();
+      mode = NoMode;
+      continue;
+    }
 
     // Long press actions.
     if (actionTime >= LONG_PRESS_DURATION && actionTime < COMMIT_DURATION) {
@@ -265,6 +304,8 @@ int main(void) {
           uart_puts("[SCHEDULED:");
           printNumber(numberOfSeconds);
           uart_putchar(']');
+
+          mode = NoMode;
         }
 
         actionTime = 0;
