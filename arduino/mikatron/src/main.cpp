@@ -5,6 +5,7 @@
 #include "uart.h"
 #include "speaker.h"
 #include "scheduler.h"
+#include "clock.h"
 #include "TinyWireM.h"
 
 enum ModeType {
@@ -19,6 +20,10 @@ ModeType mode = NoMode;
 volatile uint16_t analogResult = 0;
 uint16_t previousAction = 10;
 uint32_t actionTime = 0;
+Scheduler *scheduler;
+
+uint8_t dateParts[3];
+uint8_t datePartDigitIndex = 0;
 
 const uint16_t LONG_PRESS_DURATION = 1200;
 const uint16_t COMMIT_DURATION = 2400;
@@ -36,16 +41,6 @@ ISR(ADC_vect) {
   // the same number.
   uint8_t analogLow = ADCL;
   analogResult = (ADCH << 8) | analogLow;
-}
-
-void
-setHigh(uint8_t pin) {
-  PORTB |= 1 << pin;
-}
-
-void
-setLow(uint8_t pin) {
-  PORTB &= ~(1 << pin);
 }
 
 void
@@ -102,49 +97,21 @@ void printNumber(uint32_t number) {
  *              NPN E   C
  */
 
-/*
-void debug(Scheduler *scheduler) {
-  uart_puts("[D:");
-
-  uart_puts("[AR:");
-  printNumber(analogResult);
-  uart_putchar(']');
-
-  uart_puts("[PA:");
-  printNumber(previousAction);
-  uart_putchar(']');
-
-  uart_puts("[AT:");
-  printNumber(actionTime);
-  uart_putchar(']');
-
-  const uint8_t bufferLength = scheduler->getBufferLength();
-  uart_puts("[BFL:");
-  printNumber(bufferLength);
-  uart_putchar(']');
-  if (bufferLength > 0) {
-    uart_puts("[BF:");
-    const uint8_t *buffer = scheduler->getBuffer();
-    for (uint8_t i = 0; i < bufferLength; i++) {
-      printNumber(buffer[i]);
-    }
-    uart_putchar(']');
-  }
-  uart_putchar(']');
-}
-*/
-
 /**
  * Converts binary coded decimal to decimal, e.g. 0101 0100/0x54/54: 0x54 - 6 * (0x54 >> 4) =
  * 0x54 - 0x1e = 0x36/54.
  * @param val
  * @return
  */
-static uint8_t bcd2bin (uint8_t val) {
+static uint8_t bcd2bin(uint8_t val) {
   return val - 6 * (val >> 4);
 }
 
-void readTime() {
+static uint8_t bin2bcd(uint8_t val) {
+  return val + 6 * (val / 10);
+}
+
+void processGetTimeMode() {
   TinyWireM.beginTransmission(RTC_ADDRESS);
   TinyWireM.write(0);
   TinyWireM.endTransmission();
@@ -158,17 +125,199 @@ void readTime() {
   uint8_t m = bcd2bin(TinyWireM.read());
   uint16_t y = bcd2bin(TinyWireM.read()) + 2000;*/
 
-  uart_puts("[SECONDS:");
+  uart_puts("[TIME:");
+  printNumber(hh);
+  uart_putchar(':');
+  printNumber(mm);
+  uart_putchar(':');
   printNumber(ss);
   uart_putchar(']');
 
-  uart_puts("[MINUTES:");
-  printNumber(mm);
-  uart_putchar(']');
+  mode = NoMode;
+}
 
-  uart_puts("[HOUR:");
-  printNumber(hh);
-  uart_putchar(']');
+void processSetTimeMode(uint8_t action) {
+  // Long press actions.
+  if (actionTime >= LONG_PRESS_DURATION) {
+    switch (action) {
+      case 1:
+        action = 6;
+        break;
+      case 2:
+        action = 7;
+        break;
+      case 3:
+        action = 8;
+        break;
+      case 4:
+        action = 9;
+        break;
+      case 5:
+        action = 0;
+        break;
+      default:
+        break;
+    }
+
+    if (previousAction != action && action < 10) {
+      Speaker::doubleBeep();
+    }
+  }
+
+  if (action != previousAction) {
+    // We display action only once button is unpressed.
+    if (action == 10) {
+      dateParts[datePartDigitIndex / 2] = datePartDigitIndex % 2 == 0 ?
+                                          previousAction * 10 :
+                                          dateParts[datePartDigitIndex / 2] + previousAction;
+      if (actionTime < LONG_PRESS_DURATION) {
+        Speaker::beep();
+      }
+
+      uart_puts("[DIGIT:");
+      printNumber(previousAction);
+      uart_putchar(':');
+      printNumber(dateParts[datePartDigitIndex / 2]);
+      uart_putchar(']');
+
+      if (datePartDigitIndex == 5) {
+        uart_puts("[TIME SET:");
+        printNumber(dateParts[0]);
+        uart_putchar(':');
+        printNumber(dateParts[1]);
+        uart_putchar(':');
+        printNumber(dateParts[2]);
+        uart_putchar(']');
+
+        Clock::setTime(
+            bin2bcd(dateParts[0]),
+            bin2bcd(dateParts[1]),
+            bin2bcd(dateParts[2])
+        );
+
+        datePartDigitIndex = 0;
+        Speaker::melody();
+        mode = NoMode;
+      } else {
+        datePartDigitIndex++;
+      }
+
+      actionTime = 0;
+
+      startConversion();
+    }
+
+    previousAction = action;
+  } else if (action < 10 && actionTime < LONG_PRESS_DURATION) {
+    // Increment only when we are still not sure if it's long press.
+    actionTime += 200;
+  }
+
+  _delay_ms(200);
+}
+
+void processScheduleMode(uint8_t action) {
+  // Long press actions.
+  if (actionTime >= LONG_PRESS_DURATION && actionTime < COMMIT_DURATION) {
+    switch (action) {
+      case 1:
+        action = 6;
+        break;
+      case 2:
+        action = 7;
+        break;
+      case 3:
+        action = 8;
+        break;
+      case 4:
+        action = 9;
+        break;
+      case 5:
+        action = 0;
+        break;
+      default:
+        break;
+    }
+
+    if (previousAction != action && action < 10) {
+      Speaker::doubleBeep();
+    }
+  } else if (actionTime >= COMMIT_DURATION) {
+    if (previousAction != action && action < 10) {
+      Speaker::melody();
+    }
+  }
+
+  if (action != previousAction) {
+    // We display action only once button is unpressed.
+    if (action == 10) {
+      if (actionTime < COMMIT_DURATION) {
+        scheduler->push(previousAction);
+        if (actionTime < LONG_PRESS_DURATION) {
+          Speaker::beep();
+        }
+
+        uart_puts("[ACTION:");
+        printNumber(previousAction);
+        uart_putchar(']');
+
+        //readTime();
+      } else {
+        uint32_t numberOfSeconds = scheduler->commit((CommitType) previousAction);
+        uart_puts("[SCHEDULED:");
+        printNumber(numberOfSeconds);
+        uart_putchar(']');
+
+        mode = NoMode;
+      }
+
+      actionTime = 0;
+
+      startConversion();
+    }
+
+    previousAction = action;
+  } else if (action < 10 && actionTime < COMMIT_DURATION) {
+    // Increment only when we are still not sure if it's long press.
+    actionTime += 200;
+  }
+
+  _delay_ms(200);
+}
+
+void processNoMode(uint8_t action) {
+  if (action == 10 && actionTime >= LONG_PRESS_DURATION) {
+    mode = (ModeType) previousAction;
+
+    actionTime = 0;
+    previousAction = action;
+
+    uart_puts("[MODE:");
+    switch (mode) {
+      case GetTime:
+        uart_puts("GET TIME");
+        break;
+      case SetTime:
+        uart_puts("SET TIME");
+        break;
+      case Schedule:
+        uart_puts("SET ALARM");
+        break;
+      default:
+        uart_puts("UNKNOWN");
+        break;
+    }
+    uart_putchar(']');
+  } else if (action != 10 && actionTime < LONG_PRESS_DURATION) {
+    previousAction = action;
+    actionTime += 200;
+  }
+
+  if (actionTime >= LONG_PRESS_DURATION && (actionTime - 200) < LONG_PRESS_DURATION) {
+    Speaker::modeMelody();
+  }
+
+  _delay_ms(200);
 }
 
 int main(void) {
@@ -193,16 +342,13 @@ int main(void) {
     return 1;
   } else {
     uart_puts("[WE HAVE TIME]");
-    readTime();
   }
 
-  Scheduler *scheduler = new Scheduler(20, 10);
+  scheduler = new Scheduler(20, 10);
 
   // Start first conversion.
   startConversion();
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
   while (1) {
     if (analogResult == 0) {
       continue;
@@ -224,102 +370,19 @@ int main(void) {
 
     analogResult = 0;
 
-    // Mode is not selected yet.
-    if (mode == NoMode) {
-      if (action == 10 && actionTime >= LONG_PRESS_DURATION) {
-        mode = (ModeType)previousAction;
-
-        actionTime = 0;
-        previousAction = action;
-
-        uart_puts("[MODE:");
-        printNumber(mode);
-        uart_putchar(']');
-      } else if (action != 10 && actionTime < LONG_PRESS_DURATION) {
-        previousAction = action;
-        actionTime += 200;
-      }
-
-      if (actionTime >= LONG_PRESS_DURATION && (actionTime - 200) < LONG_PRESS_DURATION) {
-        Speaker::modeMelody();
-      }
-
-      _delay_ms(200);
-      continue;
+    switch (mode) {
+      case NoMode:
+        processNoMode(action);
+        break;
+      case GetTime:
+        processGetTimeMode();
+        break;
+      case SetTime:
+        processSetTimeMode(action);
+        break;
+      case Schedule:
+        processScheduleMode(action);
+        break;
     }
-
-    if (mode == GetTime) {
-      readTime();
-      mode = NoMode;
-      continue;
-    }
-
-    // Long press actions.
-    if (actionTime >= LONG_PRESS_DURATION && actionTime < COMMIT_DURATION) {
-      switch (action) {
-        case 1:
-          action = 6;
-          break;
-        case 2:
-          action = 7;
-          break;
-        case 3:
-          action = 8;
-          break;
-        case 4:
-          action = 9;
-          break;
-        case 5:
-          action = 0;
-          break;
-        default:
-          break;
-      }
-
-      if (previousAction != action && action < 10) {
-        Speaker::doubleBeep();
-      }
-    } else if (actionTime >= COMMIT_DURATION) {
-      if (previousAction != action && action < 10) {
-        Speaker::melody();
-      }
-    }
-
-    if (action != previousAction) {
-      // We display action only once button is unpressed.
-      if (action == 10) {
-        if (actionTime < COMMIT_DURATION) {
-          scheduler->push(previousAction);
-          if (actionTime < LONG_PRESS_DURATION) {
-            Speaker::beep();
-          }
-
-          uart_puts("[ACTION:");
-          printNumber(previousAction);
-          uart_putchar(']');
-
-          //readTime();
-        } else {
-          uint32_t numberOfSeconds = scheduler->commit((CommitType)previousAction);
-          uart_puts("[SCHEDULED:");
-          printNumber(numberOfSeconds);
-          uart_putchar(']');
-
-          mode = NoMode;
-        }
-
-        actionTime = 0;
-
-        startConversion();
-      }
-
-      previousAction = action;
-    } else if (action < 10 && actionTime < COMMIT_DURATION) {
-      // Increment only when we are still not sure if it's long press.
-      actionTime += 200;
-    }
-
-    _delay_ms(200);
   }
-#pragma clang diagnostic pop
 }
