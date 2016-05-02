@@ -97,40 +97,15 @@ void printNumber(uint32_t number) {
  *              NPN E   C
  */
 
-/**
- * Converts binary coded decimal to decimal, e.g. 0101 0100/0x54/54: 0x54 - 6 * (0x54 >> 4) =
- * 0x54 - 0x1e = 0x36/54.
- * @param val
- * @return
- */
-static uint8_t bcd2bin(uint8_t val) {
-  return val - 6 * (val >> 4);
-}
-
-static uint8_t bin2bcd(uint8_t val) {
-  return val + 6 * (val / 10);
-}
-
 void processGetTimeMode() {
-  TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(0);
-  TinyWireM.endTransmission();
-
-  TinyWireM.requestFrom(RTC_ADDRESS, 7);
-  uint8_t ss = bcd2bin(TinyWireM.read() & 0x7F);
-  uint8_t mm = bcd2bin(TinyWireM.read());
-  uint8_t hh = bcd2bin(TinyWireM.read());
-  /*TinyWireM.read();
-  uint8_t d = bcd2bin(TinyWireM.read());
-  uint8_t m = bcd2bin(TinyWireM.read());
-  uint16_t y = bcd2bin(TinyWireM.read()) + 2000;*/
+  ClockTime time = Clock::getTime();
 
   uart_puts("[TIME:");
-  printNumber(hh);
+  printNumber(time.hour());
   uart_putchar(':');
-  printNumber(mm);
+  printNumber(time.minute());
   uart_putchar(':');
-  printNumber(ss);
+  printNumber(time.second());
   uart_putchar(']');
 
   mode = NoMode;
@@ -190,9 +165,7 @@ void processSetTimeMode(uint8_t action) {
         uart_putchar(']');
 
         Clock::setTime(
-            bin2bcd(dateParts[0]),
-            bin2bcd(dateParts[1]),
-            bin2bcd(dateParts[2])
+            ClockTime(dateParts[0], dateParts[1], dateParts[2])
         );
 
         datePartDigitIndex = 0;
