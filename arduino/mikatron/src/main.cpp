@@ -12,7 +12,9 @@ enum ModeType {
   NoMode = 0,
   Schedule,
   GetTime,
-  SetTime
+  SetTime,
+  SetAlarm,
+  GetAlarm
 };
 
 ModeType mode = NoMode;
@@ -111,6 +113,20 @@ void processGetTimeMode() {
   mode = NoMode;
 }
 
+void processGetAlarmMode() {
+  ClockTime time = Clock::getAlarm();
+
+  uart_puts("[ALARM:");
+  printNumber(time.hour());
+  uart_putchar(':');
+  printNumber(time.minute());
+  uart_putchar(':');
+  printNumber(time.second());
+  uart_putchar(']');
+
+  mode = NoMode;
+}
+
 void processSetTimeMode(uint8_t action) {
   // Long press actions.
   if (actionTime >= LONG_PRESS_DURATION) {
@@ -165,6 +181,85 @@ void processSetTimeMode(uint8_t action) {
         uart_putchar(']');
 
         Clock::setTime(
+            ClockTime(dateParts[0], dateParts[1], dateParts[2])
+        );
+
+        datePartDigitIndex = 0;
+        Speaker::melody();
+        mode = NoMode;
+      } else {
+        datePartDigitIndex++;
+      }
+
+      actionTime = 0;
+
+      startConversion();
+    }
+
+    previousAction = action;
+  } else if (action < 10 && actionTime < LONG_PRESS_DURATION) {
+    // Increment only when we are still not sure if it's long press.
+    actionTime += 200;
+  }
+
+  _delay_ms(200);
+}
+
+void processSetAlarmMode(uint8_t action) {
+  // Long press actions.
+  if (actionTime >= LONG_PRESS_DURATION) {
+    switch (action) {
+      case 1:
+        action = 6;
+        break;
+      case 2:
+        action = 7;
+        break;
+      case 3:
+        action = 8;
+        break;
+      case 4:
+        action = 9;
+        break;
+      case 5:
+        action = 0;
+        break;
+      default:
+        break;
+    }
+
+    if (previousAction != action && action < 10) {
+      Speaker::doubleBeep();
+    }
+  }
+
+  if (action != previousAction) {
+    // We display action only once button is unpressed.
+    if (action == 10) {
+      dateParts[datePartDigitIndex / 2] = datePartDigitIndex % 2 == 0 ?
+                                          previousAction * 10 :
+                                          dateParts[datePartDigitIndex / 2] + previousAction;
+      if (actionTime < LONG_PRESS_DURATION) {
+        Speaker::beep();
+      }
+
+      uart_puts("[DIGIT:");
+      printNumber(previousAction);
+      uart_putchar(':');
+      printNumber(dateParts[datePartDigitIndex / 2]);
+      uart_putchar(']');
+
+      if (datePartDigitIndex == 5) {
+        uart_puts("[ALARM SET:");
+        printNumber(dateParts[0]);
+        uart_putchar(':');
+        printNumber(dateParts[1]);
+        uart_putchar(':');
+        printNumber(dateParts[2]);
+        uart_putchar(']');
+
+        Clock::setAlarm(
+            Alarm1Type::MATCH_HOURS,
             ClockTime(dateParts[0], dateParts[1], dateParts[2])
         );
 
@@ -274,7 +369,13 @@ void processNoMode(uint8_t action) {
         uart_puts("SET TIME");
         break;
       case Schedule:
+        uart_puts("SET SCHEDULE");
+        break;
+      case SetAlarm:
         uart_puts("SET ALARM");
+        break;
+      case GetAlarm:
+        uart_puts("GET ALARM");
         break;
       default:
         uart_puts("UNKNOWN");
@@ -352,6 +453,12 @@ int main(void) {
         break;
       case SetTime:
         processSetTimeMode(action);
+        break;
+      case SetAlarm:
+        processSetAlarmMode(action);
+        break;
+      case GetAlarm:
+        processGetAlarmMode();
         break;
       case Schedule:
         processScheduleMode(action);

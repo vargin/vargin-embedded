@@ -3,8 +3,6 @@
 #include "clock.h"
 #include "TinyWireM.h"
 
-#define RTC_ADDRESS  0x68
-
 /**
  * Converts binary coded decimal to decimal, e.g. 0101 0100/0x54/54: 0x54 - 6 * (0x54 >> 4) =
  * 0x54 - 0x1e = 0x36/54.
@@ -46,3 +44,65 @@ ClockTime Clock::getTime() {
 
   return ClockTime(hh, mm, ss);
 }
+
+void Clock::setAlarm(Alarm1Type type, const ClockTime& time) {
+  uint8_t seconds = bin2bcd(time.second());
+  uint8_t minutes = bin2bcd(time.minute());
+  uint8_t hours = bin2bcd(time.hour());
+
+  if (type & 0x01) seconds |= _BV(A1M1);
+  if (type & 0x02) minutes |= _BV(A1M2);
+  if (type & 0x04) hours |= _BV(A1M3);
+
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(ALARM1_SECONDS_ADDRESS);
+  TinyWireM.write(seconds);
+  TinyWireM.write(minutes);
+  TinyWireM.write(hours);
+  TinyWireM.endTransmission();
+
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(RTC_CONTROL_ADDRESS);
+  TinyWireM.endTransmission();
+
+  // Enable interrupt generation once alarm fires.
+  TinyWireM.requestFrom(RTC_ADDRESS, 1);
+  uint8_t control = bcd2bin(TinyWireM.read());
+
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(RTC_CONTROL_ADDRESS);
+  TinyWireM.write(control | _BV(CONTROL_INTCN) | _BV(CONTROL_A1IE));
+  TinyWireM.endTransmission();
+}
+
+ClockTime Clock::getAlarm() {
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(ALARM1_SECONDS_ADDRESS);
+  TinyWireM.endTransmission();
+
+  TinyWireM.requestFrom(RTC_ADDRESS, 3);
+  uint8_t ss = bcd2bin(TinyWireM.read() & 0x7F);
+  uint8_t mm = bcd2bin(TinyWireM.read() & 0x7F);
+  uint8_t hh = bcd2bin(TinyWireM.read() & 0x7F);
+
+  return ClockTime(hh, mm, ss);
+}
+
+void Clock::enableSquareWave(SquareWaveFrequency frequency) {
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(RTC_CONTROL_ADDRESS);
+  TinyWireM.endTransmission();
+
+  TinyWireM.requestFrom(RTC_ADDRESS, 1);
+  uint8_t control = bcd2bin(TinyWireM.read());
+
+  control &= ~_BV(CONTROL_INTCN);
+  control |= frequency;
+
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(RTC_CONTROL_ADDRESS);
+  TinyWireM.write(control);
+  TinyWireM.endTransmission();
+}
+
+
