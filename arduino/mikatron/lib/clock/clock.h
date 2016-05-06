@@ -35,7 +35,8 @@ enum SquareWaveFrequency {
   SQWAVE_1_HZ    = 0x00,
   SQWAVE_1024_HZ = 0x08,
   SQWAVE_4096_HZ = 0x10,
-  SQWAVE_8192_HZ = 0x18
+  SQWAVE_8192_HZ = 0x18,
+  NO_WAVE        = 0x20
 };
 
 class ClockTime {
@@ -54,7 +55,7 @@ public:
   static ClockTime getTime();
   static void setAlarm(Alarm1Type type, const ClockTime& time);
   static ClockTime getAlarm();
-  static void enableSquareWave(SquareWaveFrequency frequency);
+  static void setSquareWave(SquareWaveFrequency frequency);
 };
 
 #endif //MIKATRON_CLOCK_H

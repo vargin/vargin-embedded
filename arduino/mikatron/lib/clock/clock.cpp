@@ -88,7 +88,7 @@ ClockTime Clock::getAlarm() {
   return ClockTime(hh, mm, ss);
 }
 
-void Clock::enableSquareWave(SquareWaveFrequency frequency) {
+void Clock::setSquareWave(SquareWaveFrequency frequency) {
   TinyWireM.beginTransmission(RTC_ADDRESS);
   TinyWireM.write(RTC_CONTROL_ADDRESS);
   TinyWireM.endTransmission();
@@ -96,8 +96,15 @@ void Clock::enableSquareWave(SquareWaveFrequency frequency) {
   TinyWireM.requestFrom(RTC_ADDRESS, 1);
   uint8_t control = bcd2bin(TinyWireM.read());
 
-  control &= ~_BV(CONTROL_INTCN);
-  control |= frequency;
+  // Reset frequency to default.
+  control &= ~(_BV(CONTROL_RS1) | _BV(CONTROL_RS2));
+
+  if (frequency == SquareWaveFrequency::NO_WAVE) {
+    control |= _BV(CONTROL_INTCN);
+  } else {
+    control &= ~_BV(CONTROL_INTCN);
+    control |= frequency;
+  }
 
   TinyWireM.beginTransmission(RTC_ADDRESS);
   TinyWireM.write(RTC_CONTROL_ADDRESS);
