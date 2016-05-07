@@ -13,7 +13,11 @@
 #define A1M3 7
 #define A1M4 7
 
+#define A1F     0
+#define EN32kHz 3
+
 #define RTC_CONTROL_ADDRESS 0x0E
+#define RTC_STATUS_ADDRESS  0x0F
 
 #define CONTROL_A1IE  0
 #define CONTROL_INTCN 2
@@ -22,13 +26,13 @@
 
 enum Alarm1Type {
   // Fire alarm every second.
-  EVERY_SECOND = 0x0F,
+  EVERY_SECOND,
   // Fire alarm when seconds match.
-  MATCH_SECONDS = 0x0E,
+  MATCH_SECONDS,
   // Fire alarm when minutes and seconds match.
-  MATCH_MINUTES = 0x0C,
+  MATCH_MINUTES,
   // Fire alarm when hours and minutes and seconds match.
-  MATCH_HOURS = 0x08
+  MATCH_HOURS
 };
 
 enum SquareWaveFrequency {
