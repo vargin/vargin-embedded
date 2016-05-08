@@ -60,6 +60,10 @@ public:
   static void setAlarm(Alarm1Type type, const ClockTime& time);
   static ClockTime getAlarm();
   static void setSquareWave(SquareWaveFrequency frequency);
+  static void toggle32K(bool toggle);
+private:
+  static uint8_t readByte(uint8_t address);
+  static void writeByte(uint8_t address, uint8_t data);
 };
 
 #endif //MIKATRON_CLOCK_H

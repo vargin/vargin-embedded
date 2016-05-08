@@ -47,20 +47,10 @@ ClockTime Clock::getTime() {
 
 void Clock::setAlarm(Alarm1Type type, const ClockTime& time) {
   Clock::setSquareWave(SquareWaveFrequency::NO_WAVE);
-
-  TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(RTC_STATUS_ADDRESS);
-  TinyWireM.endTransmission();
-
-  TinyWireM.requestFrom(RTC_ADDRESS, 1);
-  uint8_t status = bcd2bin(TinyWireM.read());
-
-  status &= ~_BV(A1F);
-
-  TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(RTC_STATUS_ADDRESS);
-  TinyWireM.write(status);
-  TinyWireM.endTransmission();
+  Clock::writeByte(
+      RTC_STATUS_ADDRESS,
+      Clock::readByte(RTC_STATUS_ADDRESS) & ~_BV(A1F)
+  );
 
   uint8_t seconds = bin2bcd(time.second());
   uint8_t minutes = bin2bcd(time.minute());
@@ -96,20 +86,10 @@ void Clock::setAlarm(Alarm1Type type, const ClockTime& time) {
   TinyWireM.write(date);
   TinyWireM.endTransmission();
 
-  TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(RTC_CONTROL_ADDRESS);
-  TinyWireM.endTransmission();
-
-  // Enable interrupt generation once alarm fires.
-  TinyWireM.requestFrom(RTC_ADDRESS, 1);
-  uint8_t control = bcd2bin(TinyWireM.read());
-
-  control |= _BV(CONTROL_INTCN) | _BV(CONTROL_A1IE);
-
-  TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(RTC_CONTROL_ADDRESS);
-  TinyWireM.write(control);
-  TinyWireM.endTransmission();
+  Clock::writeByte(
+      RTC_CONTROL_ADDRESS,
+      Clock::readByte(RTC_CONTROL_ADDRESS) | _BV(CONTROL_INTCN) | _BV(CONTROL_A1IE)
+  );
 }
 
 ClockTime Clock::getAlarm() {
@@ -126,15 +106,8 @@ ClockTime Clock::getAlarm() {
 }
 
 void Clock::setSquareWave(SquareWaveFrequency frequency) {
-  TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(RTC_CONTROL_ADDRESS);
-  TinyWireM.endTransmission();
-
-  TinyWireM.requestFrom(RTC_ADDRESS, 1);
-  uint8_t control = bcd2bin(TinyWireM.read());
-
   // Reset frequency to default.
-  control &= ~(_BV(CONTROL_RS1) | _BV(CONTROL_RS2));
+  uint8_t control = Clock::readByte(RTC_CONTROL_ADDRESS) & ~(_BV(CONTROL_RS1) | _BV(CONTROL_RS2));
 
   if (frequency == SquareWaveFrequency::NO_WAVE) {
     control |= _BV(CONTROL_INTCN);
@@ -143,8 +116,32 @@ void Clock::setSquareWave(SquareWaveFrequency frequency) {
     control |= frequency;
   }
 
+  Clock::writeByte(RTC_CONTROL_ADDRESS, control);
+}
+
+uint8_t Clock::readByte(uint8_t address) {
   TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(RTC_CONTROL_ADDRESS);
-  TinyWireM.write(control);
+  TinyWireM.write(address);
   TinyWireM.endTransmission();
+
+  TinyWireM.requestFrom(RTC_ADDRESS, 1);
+  return TinyWireM.read();
+}
+
+void Clock::writeByte(uint8_t address, uint8_t data) {
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(address);
+  TinyWireM.write(data);
+  TinyWireM.endTransmission();
+}
+
+void Clock::toggle32K(bool toggle) {
+  uint8_t status = Clock::readByte(RTC_STATUS_ADDRESS);
+  const bool is32KEnabled = status & _BV(EN32kHz);
+  if (is32KEnabled != toggle) {
+    Clock::writeByte(
+        RTC_STATUS_ADDRESS,
+        toggle ? (status | _BV(EN32kHz)) : (status & ~_BV(EN32kHz))
+    );
+  }
 }
