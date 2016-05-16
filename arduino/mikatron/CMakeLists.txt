@@ -4,10 +4,10 @@ project(mikatron)
 include(CMakeListsPrivate.txt)
 
 add_definitions(-DF_CPU=8000000L)
+add_definitions(-DPLATFORMIO=021000)
 add_definitions(-DARDUINO_ARCH_AVR)
 add_definitions(-DARDUINO_AVR_ATTINY85)
 add_definitions(-DARDUINO=10608)
-add_definitions(-DPLATFORMIO=020901)
 add_definitions(-D__AVR_ATtiny85__)
 
 add_custom_target(

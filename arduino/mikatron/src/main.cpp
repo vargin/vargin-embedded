@@ -31,6 +31,8 @@ const uint16_t LONG_PRESS_DURATION = 1200;
 const uint16_t COMMIT_DURATION = 2400;
 char numberString[10];
 
+volatile bool interrupt = false;
+
 #define RTC_ADDRESS  0x68
 
 void
@@ -43,6 +45,26 @@ ISR(ADC_vect) {
   // the same number.
   uint8_t analogLow = ADCL;
   analogResult = (ADCH << 8) | analogLow;
+}
+
+ISR(PCINT0_vect) {
+  interrupt = true;
+}
+
+void
+listenForAlarm() {
+  DDRB &= ~_BV(DDB1);
+
+  PCMSK |= _BV(PCINT1);
+  GIMSK |= _BV(PCIE);
+}
+
+void
+dontListenForAlarm() {
+  DDRB |= _BV(DDB1);
+
+  GIMSK &= ~_BV(PCIE);
+  PCMSK &= ~_BV(PCINT1);
 }
 
 void
@@ -123,7 +145,6 @@ void processGetAlarmMode() {
   uart_putchar(':');
   printNumber(time.second());
   uart_putchar(']');
-
   mode = NoMode;
 }
 
@@ -151,6 +172,7 @@ void processSetTimeMode(uint8_t action) {
     }
 
     if (previousAction != action && action < 10) {
+      uart_puts("DOUBLE BEEP");
       Speaker::doubleBeep();
     }
   }
@@ -162,6 +184,7 @@ void processSetTimeMode(uint8_t action) {
                                           previousAction * 10 :
                                           dateParts[datePartDigitIndex / 2] + previousAction;
       if (actionTime < LONG_PRESS_DURATION) {
+        uart_puts("BEEP");
         Speaker::beep();
       }
 
@@ -229,6 +252,7 @@ void processSetAlarmMode(uint8_t action) {
     }
 
     if (previousAction != action && action < 10) {
+      uart_puts("DOUBLE BEEP");
       Speaker::doubleBeep();
     }
   }
@@ -240,6 +264,7 @@ void processSetAlarmMode(uint8_t action) {
                                           previousAction * 10 :
                                           dateParts[datePartDigitIndex / 2] + previousAction;
       if (actionTime < LONG_PRESS_DURATION) {
+        uart_puts("BEEP");
         Speaker::beep();
       }
 
@@ -264,6 +289,7 @@ void processSetAlarmMode(uint8_t action) {
         );
 
         datePartDigitIndex = 0;
+        uart_puts("MELODY BEEP");
         Speaker::melody();
         mode = NoMode;
       } else {
@@ -335,7 +361,6 @@ void processScheduleMode(uint8_t action) {
         uart_puts("[SCHEDULED:");
         printNumber(numberOfSeconds);
         uart_putchar(']');
-
         mode = NoMode;
       }
 
@@ -388,6 +413,7 @@ void processNoMode(uint8_t action) {
   }
 
   if (actionTime >= LONG_PRESS_DURATION && (actionTime - 200) < LONG_PRESS_DURATION) {
+    uart_puts("MELODY BEEP");
     Speaker::modeMelody();
   }
 
@@ -396,10 +422,12 @@ void processNoMode(uint8_t action) {
 
 int main(void) {
   // Set PB1 to be output.
-  DDRB |= (1 << DDB1);
+  //DDRB |= (1 << DDB1);
+
   // Set PB4 as the input.
   DDRB &= ~(1 << DDB4);
 
+  listenForAlarm();
   initADC();
   sei();
 
@@ -424,6 +452,12 @@ int main(void) {
   startConversion();
 
   while (1) {
+    if (interrupt) {
+      uart_puts("INTERRUPT");
+      interrupt = false;
+      Clock::resetAlarm();
+    }
+
     if (analogResult == 0) {
       continue;
     }

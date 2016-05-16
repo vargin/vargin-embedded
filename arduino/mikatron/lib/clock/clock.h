@@ -59,6 +59,7 @@ public:
   static ClockTime getTime();
   static void setAlarm(Alarm1Type type, const ClockTime& time);
   static ClockTime getAlarm();
+  static void resetAlarm();
   static void setSquareWave(SquareWaveFrequency frequency);
   static void toggle32K(bool toggle);
 private:

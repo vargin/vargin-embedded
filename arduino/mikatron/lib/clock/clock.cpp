@@ -92,6 +92,21 @@ void Clock::setAlarm(Alarm1Type type, const ClockTime& time) {
   );
 }
 
+void Clock::resetAlarm() {
+  Clock::writeByte(
+      RTC_STATUS_ADDRESS,
+      Clock::readByte(RTC_STATUS_ADDRESS) & ~_BV(A1F)
+  );
+
+  TinyWireM.beginTransmission(RTC_ADDRESS);
+  TinyWireM.write(ALARM1_SECONDS_ADDRESS);
+  TinyWireM.write(0);
+  TinyWireM.write(0);
+  TinyWireM.write(0);
+  TinyWireM.write(0);
+  TinyWireM.endTransmission();
+}
+
 ClockTime Clock::getAlarm() {
   TinyWireM.beginTransmission(RTC_ADDRESS);
   TinyWireM.write(ALARM1_SECONDS_ADDRESS);
