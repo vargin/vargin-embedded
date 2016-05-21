@@ -172,8 +172,7 @@ void processSetTimeMode(uint8_t action) {
     }
 
     if (previousAction != action && action < 10) {
-      uart_puts("DOUBLE BEEP");
-      Speaker::doubleBeep();
+      Speaker::play(MELODY_DOUBLE_BEEP);
     }
   }
 
@@ -184,8 +183,7 @@ void processSetTimeMode(uint8_t action) {
                                           previousAction * 10 :
                                           dateParts[datePartDigitIndex / 2] + previousAction;
       if (actionTime < LONG_PRESS_DURATION) {
-        uart_puts("BEEP");
-        Speaker::beep();
+        Speaker::play(MELODY_BEEP);
       }
 
       uart_puts("[DIGIT:");
@@ -208,7 +206,7 @@ void processSetTimeMode(uint8_t action) {
         );
 
         datePartDigitIndex = 0;
-        Speaker::melody();
+        Speaker::play(MELODY_ALARM);
         mode = NoMode;
       } else {
         datePartDigitIndex++;
@@ -252,8 +250,7 @@ void processSetAlarmMode(uint8_t action) {
     }
 
     if (previousAction != action && action < 10) {
-      uart_puts("DOUBLE BEEP");
-      Speaker::doubleBeep();
+      Speaker::play(MELODY_DOUBLE_BEEP);
     }
   }
 
@@ -264,8 +261,7 @@ void processSetAlarmMode(uint8_t action) {
                                           previousAction * 10 :
                                           dateParts[datePartDigitIndex / 2] + previousAction;
       if (actionTime < LONG_PRESS_DURATION) {
-        uart_puts("BEEP");
-        Speaker::beep();
+        Speaker::play(MELODY_BEEP);
       }
 
       uart_puts("[DIGIT:");
@@ -289,8 +285,7 @@ void processSetAlarmMode(uint8_t action) {
         );
 
         datePartDigitIndex = 0;
-        uart_puts("MELODY BEEP");
-        Speaker::melody();
+        Speaker::play(MELODY_ALARM);
         mode = NoMode;
       } else {
         datePartDigitIndex++;
@@ -334,11 +329,11 @@ void processScheduleMode(uint8_t action) {
     }
 
     if (previousAction != action && action < 10) {
-      Speaker::doubleBeep();
+      Speaker::play(MELODY_DOUBLE_BEEP);
     }
   } else if (actionTime >= COMMIT_DURATION) {
     if (previousAction != action && action < 10) {
-      Speaker::melody();
+      Speaker::play(MELODY_ALARM);
     }
   }
 
@@ -348,7 +343,7 @@ void processScheduleMode(uint8_t action) {
       if (actionTime < COMMIT_DURATION) {
         scheduler->push(previousAction);
         if (actionTime < LONG_PRESS_DURATION) {
-          Speaker::beep();
+          Speaker::play(MELODY_BEEP);
         }
 
         uart_puts("[ACTION:");
@@ -413,8 +408,7 @@ void processNoMode(uint8_t action) {
   }
 
   if (actionTime >= LONG_PRESS_DURATION && (actionTime - 200) < LONG_PRESS_DURATION) {
-    uart_puts("MELODY BEEP");
-    Speaker::modeMelody();
+    Speaker::play(MELODY_MODE);
   }
 
   _delay_ms(200);
