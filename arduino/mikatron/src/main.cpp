@@ -52,22 +52,6 @@ ISR(PCINT0_vect) {
 }
 
 void
-listenForAlarm() {
-  DDRB &= ~_BV(DDB1);
-
-  PCMSK |= _BV(PCINT1);
-  GIMSK |= _BV(PCIE);
-}
-
-void
-dontListenForAlarm() {
-  DDRB |= _BV(DDB1);
-
-  GIMSK &= ~_BV(PCIE);
-  PCMSK &= ~_BV(PCINT1);
-}
-
-void
 initADC() {
   // Choose Vcc as reference voltage and right value adjustment.
   ADMUX &= ~((1 << REFS1) | (1 << REFS0) | (1 << ADLAR));
@@ -107,9 +91,9 @@ void printNumber(uint32_t number) {
 /**
  * GPIO ports:
  * PB0 (pin 5) - SDA;
- * PB1 (pin 6) - PWM (speaker);
+ * PB1 (pin 6) - PWM (speaker) + UART Rx/Tx;
  * PB2 (pin 7) - SCL;
- * PB3 (pin 2) - UART Rx/Tx;
+ * PB3 (pin 2) - Alarm Interruption Pin;
  * PB4 (pin 3) - ADC (buttons);
  * PB5 (pin 1) - Vacant (reset).
  *
@@ -418,10 +402,12 @@ int main(void) {
   // Set PB1 to be output.
   //DDRB |= (1 << DDB1);
 
-  // Set PB4 as the input.
-  DDRB &= ~(1 << DDB4);
+  // Set PB3 & PB4 as the inputs.
+  DDRB &= ~(_BV(DDB3) | _BV(DDB4));
 
-  listenForAlarm();
+  PCMSK |= _BV(PCINT3);
+  GIMSK |= _BV(PCIE);
+
   initADC();
   sei();
 
@@ -449,6 +435,11 @@ int main(void) {
     if (interrupt) {
       uart_puts("INTERRUPT");
       interrupt = false;
+
+      Speaker::play(MELODY_ALARM);
+      Speaker::play(MELODY_ALARM);
+      Speaker::play(MELODY_ALARM);
+
       Clock::resetAlarm();
     }
 
