@@ -1,3 +1,6 @@
+#include "storage.h"
+#include "TinyWireM.h"
+
 #ifndef MIKATRON_CLOCK_H
 #define MIKATRON_CLOCK_H
 
@@ -49,6 +52,8 @@ public:
   uint8_t hour() const        { return hh; }
   uint8_t minute() const      { return mm; }
   uint8_t second() const      { return ss; }
+  bool operator==(const ClockTime& other);
+  bool operator<(const ClockTime& other);
 protected:
   uint8_t hh, mm, ss;
 };
@@ -57,14 +62,21 @@ class Clock {
 public:
   static void setTime(const ClockTime& time);
   static ClockTime getTime();
+
   static void setAlarm(Alarm1Type type, const ClockTime& time);
   static ClockTime getAlarm();
   static void resetAlarm();
+  static void addAlarm(const ClockTime& time);
+  static ClockTime getNextAlarm();
+  static void clearAlarms();
+
   static void setSquareWave(SquareWaveFrequency frequency);
   static void toggle32K(bool toggle);
 private:
   static uint8_t readByte(uint8_t address);
   static void writeByte(uint8_t address, uint8_t data);
+  static void refreshAlarms();
+  static bool hasAlarm(const ClockTime& time);
 };
 
 #endif //MIKATRON_CLOCK_H

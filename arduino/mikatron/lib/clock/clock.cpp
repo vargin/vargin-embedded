@@ -1,6 +1,26 @@
 #include <avr/io.h>
+#include <stdlib.h>
 #include "clock.h"
-#include "TinyWireM.h"
+
+const uint8_t MAX_ALARM_COUNT = 20;
+
+ClockTime alarms[MAX_ALARM_COUNT];
+uint8_t alarmCount = 0;
+
+static int clockTimeSorter(const void *pLhs, const void *pRhs) {
+  const ClockTime *lhs = (const ClockTime *)pLhs;
+  const ClockTime *rhs = (const ClockTime *)pRhs;
+
+  if (lhs->hour() != rhs->hour()) {
+    return lhs->hour() - rhs->hour();
+  }
+
+  if (lhs->minute() != rhs->minute()) {
+    return lhs->minute() - rhs->minute();
+  }
+
+  return lhs->second() - rhs->second();
+}
 
 /**
  * Converts binary coded decimal to decimal, e.g. 0101 0100/0x54/54: 0x54 - 6 * (0x54 >> 4) =
@@ -20,6 +40,18 @@ ClockTime::ClockTime(uint8_t hour, uint8_t min, uint8_t sec) {
   hh = hour;
   mm = min;
   ss = sec;
+}
+
+bool ClockTime::operator==(const ClockTime &other) {
+  return this->hour() == other.hour() &&
+          this->minute() == other.minute() &&
+          this->second() == other.second();
+}
+
+bool ClockTime::operator<(const ClockTime &other) {
+  return this->hour() <= other.hour() &&
+         this->minute() <= other.minute() &&
+         this->second() < other.second();
 }
 
 void Clock::setTime(const ClockTime& time) {
@@ -93,8 +125,8 @@ void Clock::setAlarm(Alarm1Type type, const ClockTime& time) {
 
 void Clock::resetAlarm() {
   Clock::writeByte(
-      RTC_STATUS_ADDRESS,
-      Clock::readByte(RTC_STATUS_ADDRESS) & ~_BV(A1F)
+    RTC_STATUS_ADDRESS,
+    Clock::readByte(RTC_STATUS_ADDRESS) & ~_BV(A1F)
   );
 
   TinyWireM.beginTransmission(RTC_ADDRESS);
@@ -154,8 +186,90 @@ void Clock::toggle32K(bool toggle) {
   const bool is32KEnabled = status & _BV(EN32kHz);
   if (is32KEnabled != toggle) {
     Clock::writeByte(
-        RTC_STATUS_ADDRESS,
-        toggle ? (status | _BV(EN32kHz)) : (status & ~_BV(EN32kHz))
+      RTC_STATUS_ADDRESS,
+      toggle ? (status | _BV(EN32kHz)) : (status & ~_BV(EN32kHz))
+    );
+  }
+}
+
+ClockTime Clock::getNextAlarm() {
+  Clock::refreshAlarms();
+
+  ClockTime currentTime = Clock::getTime();
+
+  for (uint8_t i = 0; i < alarmCount; i++) {
+    ClockTime alarm = alarms[i];
+
+    if (currentTime < alarm) {
+      return alarm;
+    }
+  }
+
+  return alarmCount > 0 ? alarms[0] : NULL;
+}
+
+void Clock::addAlarm(const ClockTime &time) {
+  if (Clock::hasAlarm(time)) {
+    return;
+  }
+
+  alarms[alarmCount++] = time;
+
+  // Order all alarms.
+  qsort(alarms, alarmCount, sizeof(ClockTime), clockTimeSorter);
+
+  // Add new alarm to the end of the list.
+  Storage::write(alarmCount * 3 - 2, bin2bcd(time.hour()));
+  Storage::write(alarmCount * 3 - 1, bin2bcd(time.minute()));
+  Storage::write(alarmCount * 3, bin2bcd(time.second()));
+
+  // Write new length.
+  Storage::write(0, alarmCount);
+
+  ClockTime nextAlarm = Clock::getNextAlarm();
+
+  // If next alarm should be the new one, let's set it.
+  if (nextAlarm == time) {
+    Clock::setAlarm(Alarm1Type::MATCH_HOURS, time);
+  }
+}
+bool Clock::hasAlarm(const ClockTime &time) {
+  Clock::refreshAlarms();
+
+  for (uint8_t i = 0; i < alarmCount; i++) {
+    ClockTime alarm = alarms[i];
+
+    if (alarms[i] == time) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void Clock::clearAlarms() {
+  for (uint8_t i = 0; i < alarmCount; i++) {
+    alarms[i] = NULL;
+  }
+
+  alarmCount = 0;
+
+  Storage::write(0, alarmCount);
+}
+
+void Clock::refreshAlarms() {
+  if (alarmCount != 0) {
+    return;
+  }
+
+  // If we don't have any alarms let's check if just haven't loaded them yet.
+  alarmCount = Storage::read(0);
+
+  for (uint8_t i = 0; i < alarmCount; i++) {
+    alarms[i] = ClockTime(
+      bcd2bin(Storage::read(i * 3 + 1)),
+      bcd2bin(Storage::read(i * 3 + 2)),
+      bcd2bin(Storage::read(i * 3 + 3))
     );
   }
 }
