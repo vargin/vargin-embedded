@@ -60,6 +60,7 @@ protected:
 
 class Clock {
 public:
+  static void init();
   static void setTime(const ClockTime& time);
   static ClockTime getTime();
 

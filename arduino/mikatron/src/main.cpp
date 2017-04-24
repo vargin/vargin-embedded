@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 #include "uart.h"
 #include "speaker.h"
 #include "scheduler.h"
 #include "clock.h"
-#include "TinyWireM.h"
 
 enum ModeType {
   NoMode = 0,
@@ -94,7 +94,7 @@ void printNumber(uint32_t number) {
  * PB1 (pin 6) - PWM (speaker) + UART Rx/Tx;
  * PB2 (pin 7) - SCL;
  * PB3 (pin 2) - Alarm Interruption Pin;
- * PB4 (pin 3) - ADC (buttons);
+ * PB4 (pin 3) - ADC (buttons, 6k - 3k - 1.5k - 680 -+- 2k);
  * PB5 (pin 1) - Vacant (reset).
  *
  * UART Rx/Tx:
@@ -211,148 +211,40 @@ void processSetTimeMode(uint8_t action) {
 }
 
 void processSetAlarmMode(uint8_t action) {
-  // Long press actions.
-  if (actionTime >= LONG_PRESS_DURATION) {
-    switch (action) {
-      case 1:
-        action = 6;
-        break;
-      case 2:
-        action = 7;
-        break;
-      case 3:
-        action = 8;
-        break;
-      case 4:
-        action = 9;
-        break;
-      case 5:
-        action = 0;
-        break;
-      default:
-        break;
-    }
+  cli();
 
-    if (previousAction != action && action < 10) {
-      Speaker::play(MELODY_DOUBLE_BEEP);
-    }
-  }
+  Clock::clearAlarms();
+  uart_puts("alarms cleared");
+  processGetTimeMode();
+  ClockTime currentTime = Clock::getTime();
+  Clock::addAlarm(ClockTime(currentTime.hour(), currentTime.minute() + 1, 0));
+  processGetAlarmMode();
+  uart_puts("alarm added");
+  mode = NoMode;
 
-  if (action != previousAction) {
-    // We display action only once button is unpressed.
-    if (action == 10) {
-      dateParts[datePartDigitIndex / 2] = datePartDigitIndex % 2 == 0 ?
-                                          previousAction * 10 :
-                                          dateParts[datePartDigitIndex / 2] + previousAction;
-      if (actionTime < LONG_PRESS_DURATION) {
-        Speaker::play(MELODY_BEEP);
-      }
-
-      uart_puts("[DIGIT:");
-      printNumber(previousAction);
-      uart_putchar(':');
-      printNumber(dateParts[datePartDigitIndex / 2]);
-      uart_putchar(']');
-
-      if (datePartDigitIndex == 5) {
-        uart_puts("[ALARM SET:");
-        printNumber(dateParts[0]);
-        uart_putchar(':');
-        printNumber(dateParts[1]);
-        uart_putchar(':');
-        printNumber(dateParts[2]);
-        uart_putchar(']');
-
-        Clock::setAlarm(
-            Alarm1Type::MATCH_HOURS,
-            ClockTime(dateParts[0], dateParts[1], dateParts[2])
-        );
-
-        datePartDigitIndex = 0;
-        Speaker::play(MELODY_ALARM);
-        mode = NoMode;
-      } else {
-        datePartDigitIndex++;
-      }
-
-      actionTime = 0;
-
-      startConversion();
-    }
-
-    previousAction = action;
-  } else if (action < 10 && actionTime < LONG_PRESS_DURATION) {
-    // Increment only when we are still not sure if it's long press.
-    actionTime += 200;
-  }
+  sei();
 
   _delay_ms(200);
 }
 
 void processScheduleMode(uint8_t action) {
-  // Long press actions.
-  if (actionTime >= LONG_PRESS_DURATION && actionTime < COMMIT_DURATION) {
-    switch (action) {
-      case 1:
-        action = 6;
-        break;
-      case 2:
-        action = 7;
-        break;
-      case 3:
-        action = 8;
-        break;
-      case 4:
-        action = 9;
-        break;
-      case 5:
-        action = 0;
-        break;
-      default:
-        break;
-    }
+  uart_puts("Going to sleep!");
+  Speaker::play(MELODY_ALARM);
 
-    if (previousAction != action && action < 10) {
-      Speaker::play(MELODY_DOUBLE_BEEP);
-    }
-  } else if (actionTime >= COMMIT_DURATION) {
-    if (previousAction != action && action < 10) {
-      Speaker::play(MELODY_ALARM);
-    }
-  }
+  PORTB &= ~_BV(DDB1);
 
-  if (action != previousAction) {
-    // We display action only once button is unpressed.
-    if (action == 10) {
-      if (actionTime < COMMIT_DURATION) {
-        scheduler->push(previousAction);
-        if (actionTime < LONG_PRESS_DURATION) {
-          Speaker::play(MELODY_BEEP);
-        }
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  cli();
+  sleep_enable();
+  sei();
+  sleep_cpu();
+  sleep_disable();
+  sei();
 
-        uart_puts("[ACTION:");
-        printNumber(previousAction);
-        uart_putchar(']');
+  PORTB |= _BV(DDB1);
 
-        //readTime();
-      } else {
-        uint32_t numberOfSeconds = scheduler->commit((CommitType) previousAction);
-        uart_puts("[SCHEDULED:");
-        printNumber(numberOfSeconds);
-        uart_putchar(']');
-        mode = NoMode;
-      }
-
-      actionTime = 0;
-
-      startConversion();
-    }
-
-    previousAction = action;
-  } else if (action < 10 && actionTime < COMMIT_DURATION) {
-    // Increment only when we are still not sure if it's long press.
-    actionTime += 200;
-  }
+  uart_puts("woke up!");
+  mode = NoMode;
 
   _delay_ms(200);
 }
@@ -400,7 +292,8 @@ void processNoMode(uint8_t action) {
 
 int main(void) {
   // Set PB1 to be output.
-  //DDRB |= (1 << DDB1);
+  DDRB |= _BV(DDB1);
+  PORTB |= _BV(DDB1);
 
   // Set PB3 & PB4 as the inputs.
   DDRB &= ~(_BV(DDB3) | _BV(DDB4));
@@ -411,22 +304,7 @@ int main(void) {
   initADC();
   sei();
 
-  TinyWireM.begin();
-
-  TinyWireM.beginTransmission(RTC_ADDRESS);
-  TinyWireM.write(0);
-  TinyWireM.endTransmission();
-
-  TinyWireM.requestFrom(RTC_ADDRESS, 1);
-
-  if (TinyWireM.read() >> 7) {
-    uart_puts("[NO TIME]");
-    return 1;
-  } else {
-    uart_puts("[WE HAVE TIME]");
-  }
-
-  scheduler = new Scheduler(20, 10);
+  Clock::init();
 
   // Start first conversion.
   startConversion();
@@ -439,8 +317,6 @@ int main(void) {
       Speaker::play(MELODY_ALARM);
       Speaker::play(MELODY_ALARM);
       Speaker::play(MELODY_ALARM);
-
-      Clock::resetAlarm();
     }
 
     if (analogResult == 0) {

@@ -21,3 +21,65 @@ get flash id : 0x001440e0
 manufacturer_id: 0xe0
 device_id: 0x4014
 vendor: 224
+
+
+
+
+esptool.py --port /dev/ttyUSB0 write_flash -fm qio -fs 32m 0x00000 ../flash/boot_v1.6.bin 0x01000 ../flash/user1.2048.new.5.bin 0x3fc000 ../flash/esp_init_data_default.bin 0x3fe000 ../flash/blank.bin 
+
+
+
+New iteration
+00 08
+01 3F
+02 03
+03 03
+04 03
+05 02
+06 0F
+
+07 0E
+08 00
+09 00
+0A E7
+0B C2
+0C C3
+0D C4
+0E C5
+0F C6
+10 E7
+11 00
+12 00
+13 00
+14 00
+15 00
+16 00
+17 11
+
+New iteration
+00 0C
+01 3F
+02 03
+03 03
+04 5F
+05 02
+06 07
+07 0E
+08 00
+09 00
+0A E7
+0B C2
+0C C3
+0D C4
+0E C5
+0F C6
+10 E7
+11 00
+12 00
+13 00
+14 00
+15 00
+16 00
+17 11
+1C 00
+1D 00

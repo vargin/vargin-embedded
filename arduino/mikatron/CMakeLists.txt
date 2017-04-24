@@ -3,13 +3,6 @@ project(mikatron)
 
 include(CMakeListsPrivate.txt)
 
-add_definitions(-DF_CPU=8000000L)
-add_definitions(-DPLATFORMIO=021003)
-add_definitions(-DARDUINO_ARCH_AVR)
-add_definitions(-DARDUINO_AVR_ATTINY85)
-add_definitions(-DARDUINO=10608)
-add_definitions(-D__AVR_ATtiny85__)
-
 add_custom_target(
     PLATFORMIO_BUILD ALL
     COMMAND ${PLATFORMIO_CMD} -f -c clion run
@@ -46,6 +39,10 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(mikatron
-    src/main.cpp
+add_custom_target(
+    PLATFORMIO_REBUILD_PROJECT_INDEX ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion init --ide clion
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+add_executable(${PROJECT_NAME} ${SRC_LIST})

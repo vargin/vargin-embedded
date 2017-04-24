@@ -63,6 +63,10 @@ void Clock::setTime(const ClockTime& time) {
   TinyWireM.endTransmission();
 }
 
+void Clock::init() {
+  TinyWireM.begin();
+}
+
 ClockTime Clock::getTime() {
   TinyWireM.beginTransmission(RTC_ADDRESS);
   TinyWireM.write(0);
